@@ -29,7 +29,7 @@ public class Session
     public VideoQuality VideoQuality { get; init; }
 
     private HttpClient _httpClient;
-    private TidalUser _activeUser;
+    private TidalUser? _activeUser;
 
     private int _itemLimit;
     private bool _alac;
@@ -62,34 +62,6 @@ public class Session
         }
 
         return $"{Globals.API_PKCE_AUTH}?{queryString}";
-    }
-
-    internal async Task<SessionInfo?> GetSessionInfo(OAuthTokenData data)
-    {
-        // TODO: custom exceptions for the errors here
-
-        ArgumentNullException.ThrowIfNull(nameof(data));
-
-        HttpRequestMessage request = new()
-        {
-            RequestUri = new(Globals.API_V1_LOCATION + "sessions"),
-            Method = HttpMethod.Get,
-        };
-        request.Headers.Add("Authorization", $"{data.TokenType} {data.AccessToken}");
-
-        HttpResponseMessage response = await _httpClient.SendAsync(request);
-
-        if (!response.IsSuccessStatusCode)
-            throw new Exception($"Session request failed: {await response.Content.ReadAsStringAsync()}");
-
-        try
-        {
-            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<SessionInfo>();
-        }
-        catch
-        {
-            throw new Exception("Invalid response for session info.");
-        }
     }
 
     internal async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri)

@@ -1,11 +1,18 @@
+using Newtonsoft.Json;
 using TidalSharp.Data;
 
 namespace TidalSharp;
 
 public class TidalClient
 {
-    public TidalClient()
+    public TidalClient(string? dataPath = null)
     {
+        _dataPath = dataPath;
+        _userJsonPath = _dataPath == null ? null : Path.Combine(_dataPath, "lastUser.json");
+
+        if (_dataPath != null && !Directory.Exists(_dataPath))
+            Directory.CreateDirectory(_dataPath);
+
         _httpClientHandler = new() { CookieContainer = new() };
         _httpClient = new HttpClient(_httpClientHandler);
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Safari/537.36");
@@ -13,7 +20,6 @@ public class TidalClient
 
         // TODO: lazy defaults
         Session = new(_httpClient, AudioQuality.HIGH, VideoQuality.HIGH);
-        LoginToken();
     }
 
     public Session Session { get; init; }
@@ -21,12 +27,15 @@ public class TidalClient
     private TidalUser? _activeUser;
     private bool _isPkce;
 
+    private string? _dataPath;
+    private string? _userJsonPath;
+
     private HttpClient _httpClient;
     private HttpClientHandler _httpClientHandler;
 
     public async Task<bool> Login(string? redirectUri = null)
     {
-        var hasToken = LoginToken();
+        var hasToken = await CheckForStoredUser();
         if (hasToken)
             return true;
         if (string.IsNullOrEmpty(redirectUri))
@@ -35,25 +44,45 @@ public class TidalClient
         var data = await Session.GetOAuthDataFromRedirect(redirectUri);
         if (data == null) return false;
 
-        var session = await Session.GetSessionInfo(data);
-        if (session == null) return false;
+        var user = new TidalUser(data, true);
+        await user.GetSession(_httpClient);
 
+        if (_dataPath != null && _userJsonPath != null)
+            await File.WriteAllTextAsync(_userJsonPath, JsonConvert.SerializeObject(user));
 
-        var user = new TidalUser(data, session, true);
         _activeUser = user;
         Session.UpdateUser(user);
 
         return false;
     }
 
-    private bool LoginToken(bool doPkce = true)
+    private async Task<bool> CheckForStoredUser(bool doPkce = true)
     {
         if (Session.AudioQuality != AudioQuality.HI_RES_LOSSLESS)
             doPkce = false;
 
         _isPkce = doPkce;
 
-        // TODO: load token from storage
+        if (_userJsonPath != null && File.Exists(_userJsonPath))
+        {
+            try
+            {
+                var userData = await File.ReadAllTextAsync(_userJsonPath);
+                var user = JsonConvert.DeserializeObject<TidalUser>(userData);
+                if (user == null) return false;
+
+                await user.GetSession(_httpClient);
+
+                _activeUser = user;
+                Session.UpdateUser(user);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         return false;
     }

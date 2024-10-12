@@ -1,11 +1,22 @@
 ﻿using Dumpify;
 using TidalSharp;
 
+string dataDir = Path.Combine(Directory.GetCurrentDirectory(), "TidalSharpData");
+
 var client = new TidalClient();
-var url = client.Session.GetPkceLoginUrl();
-Console.WriteLine(url);
+bool loggedIn = await client.Login();
 
-Console.WriteLine("Enter resulting url: ");
-var resultUrl = Console.ReadLine()!;
+if (!loggedIn)
+{
+    Console.WriteLine("No existing user data.");
 
-(await client.Login(resultUrl)).Dump();
+    var url = client.Session.GetPkceLoginUrl();
+    Console.WriteLine(url);
+
+    Console.WriteLine("Enter resulting url: ");
+    var resultUrl = Console.ReadLine()!;
+
+    await client.Login(resultUrl);
+}
+
+Console.WriteLine("Logged in.");
