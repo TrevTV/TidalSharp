@@ -1,5 +1,4 @@
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -30,6 +29,7 @@ public class Session
     public VideoQuality VideoQuality { get; init; }
 
     private HttpClient _httpClient;
+    private TidalUser _activeUser;
 
     private int _itemLimit;
     private bool _alac;
@@ -37,6 +37,8 @@ public class Session
     private string _clientUniqueKey;
     private string _codeVerifier;
     private string _codeChallenge;
+
+    public void UpdateUser(TidalUser user) => _activeUser = user;
 
     public string GetPkceLoginUrl()
     {
@@ -62,7 +64,35 @@ public class Session
         return $"{Globals.API_PKCE_AUTH}?{queryString}";
     }
 
-    public async Task LoginWithRedirectUri(string uri)
+    internal async Task<SessionInfo?> GetSessionInfo(OAuthTokenData data)
+    {
+        // TODO: custom exceptions for the errors here
+
+        ArgumentNullException.ThrowIfNull(nameof(data));
+
+        HttpRequestMessage request = new()
+        {
+            RequestUri = new(Globals.API_V1_LOCATION + "sessions"),
+            Method = HttpMethod.Get,
+        };
+        request.Headers.Add("Authorization", $"{data.TokenType} {data.AccessToken}");
+
+        HttpResponseMessage response = await _httpClient.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"Session request failed: {await response.Content.ReadAsStringAsync()}");
+
+        try
+        {
+            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<SessionInfo>();
+        }
+        catch
+        {
+            throw new Exception("Invalid response for session info.");
+        }
+    }
+
+    internal async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri)
     {
         // TODO: custom exceptions for the errors here
 
@@ -93,8 +123,7 @@ public class Session
 
         try
         {
-            var token = JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<OAuthTokenData>();
-            // TODO: do stuff with it
+            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<OAuthTokenData>();
         }
         catch
         {

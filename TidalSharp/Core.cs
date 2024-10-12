@@ -1,41 +1,54 @@
+using TidalSharp.Data;
+
 namespace TidalSharp;
 
 public class TidalClient
 {
     public TidalClient()
     {
-        _clientHandler = new() { CookieContainer = new() };
-        _client = new HttpClient(_clientHandler);
-        _client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Safari/537.36");
+        _httpClientHandler = new() { CookieContainer = new() };
+        _httpClient = new HttpClient(_httpClientHandler);
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Safari/537.36");
+        _httpClient.DefaultRequestHeaders.Add("X-Tidal-Token", Globals.CLIENT_ID);
 
         // TODO: lazy defaults
-        Session = new(_client, Data.AudioQuality.HIGH, Data.VideoQuality.HIGH);
+        Session = new(_httpClient, AudioQuality.HIGH, VideoQuality.HIGH);
         LoginToken();
     }
 
     public Session Session { get; init; }
 
-    private HttpClient _client;
-    private HttpClientHandler _clientHandler;
-
+    private TidalUser? _activeUser;
     private bool _isPkce;
 
-    public bool Login()
+    private HttpClient _httpClient;
+    private HttpClientHandler _httpClientHandler;
+
+    public async Task<bool> Login(string? redirectUri = null)
     {
         var hasToken = LoginToken();
         if (hasToken)
             return true;
+        if (string.IsNullOrEmpty(redirectUri))
+            return false;
 
-        var pkceUrl = Session.GetPkceLoginUrl();
-        Console.WriteLine(pkceUrl);
+        var data = await Session.GetOAuthDataFromRedirect(redirectUri);
+        if (data == null) return false;
 
-        // TODO: login_pkce
+        var session = await Session.GetSessionInfo(data);
+        if (session == null) return false;
+
+
+        var user = new TidalUser(data, session, true);
+        _activeUser = user;
+        Session.UpdateUser(user);
+
         return false;
     }
 
     private bool LoginToken(bool doPkce = true)
     {
-        if (Session.AudioQuality != Data.AudioQuality.HI_RES_LOSSLESS)
+        if (Session.AudioQuality != AudioQuality.HI_RES_LOSSLESS)
             doPkce = false;
 
         _isPkce = doPkce;
