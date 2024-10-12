@@ -1,3 +1,5 @@
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -7,23 +9,27 @@ namespace TidalSharp;
 
 public class Session
 {
-    public Session(AudioQuality audioQuality, VideoQuality videoQuality, int itemLimit = 1000, bool alac = true)
+    internal Session(HttpClient client, AudioQuality audioQuality, VideoQuality videoQuality, int itemLimit = 1000, bool alac = true)
     {
         AudioQuality = audioQuality;
         VideoQuality = videoQuality;
+
+        _httpClient = client;
         _alac = alac;
 
         _itemLimit = itemLimit > 10000 ? 10000 : itemLimit;
 
         _clientUniqueKey = $"{BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0):x}";
-        _codeVerifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=');
+        _codeVerifier = ToBase64UrlEncoded(RandomNumberGenerator.GetBytes(32));
 
         using var sha256 = SHA256.Create();
-        _codeChallenge = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(_codeVerifier))).TrimEnd('=');
+        _codeChallenge = ToBase64UrlEncoded(sha256.ComputeHash(Encoding.UTF8.GetBytes(_codeVerifier)));
     }
 
     public AudioQuality AudioQuality { get; init; }
     public VideoQuality VideoQuality { get; init; }
+
+    private HttpClient _httpClient;
 
     private int _itemLimit;
     private bool _alac;
@@ -55,4 +61,46 @@ public class Session
 
         return $"{Globals.API_PKCE_AUTH}?{queryString}";
     }
+
+    public async Task LoginWithRedirectUri(string uri)
+    {
+        // TODO: custom exceptions for the errors here
+
+        if (string.IsNullOrEmpty(uri) || !uri.StartsWith("https://"))
+            throw new Exception("The provided redirect URL looks wrong: " + uri);
+
+        var queryParams = HttpUtility.ParseQueryString(new Uri(uri).Query);
+        string? code = queryParams.Get("code");
+        if (string.IsNullOrEmpty(code))
+            throw new Exception("Authorization code not found in the redirect URL.");
+
+        var data = new Dictionary<string, string>
+            {
+                { "code", code },
+                { "client_id", Globals.CLIENT_ID_PKCE },
+                { "grant_type", "authorization_code" },
+                { "redirect_uri", Globals.PKCE_URI_REDIRECT },
+                { "scope", "r_usr+w_usr+w_sub" },
+                { "code_verifier", _codeVerifier },
+                { "client_unique_key", _clientUniqueKey }
+            };
+
+        var content = new FormUrlEncodedContent(data);
+        HttpResponseMessage response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content);
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"Login failed: {await response.Content.ReadAsStringAsync()}");
+
+        try
+        {
+            var token = JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<OAuthTokenData>();
+            // TODO: do stuff with it
+        }
+        catch
+        {
+            throw new Exception("Invalid response for the authorization code.");
+        }
+    }
+
+    private static string ToBase64UrlEncoded(byte[] data) => Convert.ToBase64String(data).Replace("+", "-").Replace("/", "_").TrimEnd('=');
 }

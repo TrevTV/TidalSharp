@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dumpify" Version="0.6.6" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TidalSharp\TidalSharp.csproj" />
   </ItemGroup>
 

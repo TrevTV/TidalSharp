@@ -4,12 +4,20 @@ public class TidalClient
 {
     public TidalClient()
     {
+        _clientHandler = new() { CookieContainer = new() };
+        _client = new HttpClient(_clientHandler);
+        _client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Safari/537.36");
+
         // TODO: lazy defaults
-        _session = new(Data.AudioQuality.HIGH, Data.VideoQuality.HIGH);
+        Session = new(_client, Data.AudioQuality.HIGH, Data.VideoQuality.HIGH);
         LoginToken();
     }
 
-    private Session _session;
+    public Session Session { get; init; }
+
+    private HttpClient _client;
+    private HttpClientHandler _clientHandler;
+
     private bool _isPkce;
 
     public bool Login()
@@ -18,7 +26,7 @@ public class TidalClient
         if (hasToken)
             return true;
 
-        var pkceUrl = _session.GetPkceLoginUrl();
+        var pkceUrl = Session.GetPkceLoginUrl();
         Console.WriteLine(pkceUrl);
 
         // TODO: login_pkce
@@ -27,7 +35,7 @@ public class TidalClient
 
     private bool LoginToken(bool doPkce = true)
     {
-        if (_session.AudioQuality != Data.AudioQuality.HI_RES_LOSSLESS)
+        if (Session.AudioQuality != Data.AudioQuality.HI_RES_LOSSLESS)
             doPkce = false;
 
         _isPkce = doPkce;
