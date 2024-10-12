@@ -14,9 +14,9 @@ public class Session
         VideoQuality = videoQuality;
 
         _httpClient = client;
-        _alac = alac;
+        Alac = alac;
 
-        _itemLimit = itemLimit > 10000 ? 10000 : itemLimit;
+        ItemLimit = itemLimit > 10000 ? 10000 : itemLimit;
 
         _clientUniqueKey = $"{BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0):x}";
         _codeVerifier = ToBase64UrlEncoded(RandomNumberGenerator.GetBytes(32));
@@ -27,18 +27,14 @@ public class Session
 
     public AudioQuality AudioQuality { get; init; }
     public VideoQuality VideoQuality { get; init; }
+    public int ItemLimit { get; init; }
+    public bool Alac { get; init; }
 
     private HttpClient _httpClient;
-    private TidalUser? _activeUser;
-
-    private int _itemLimit;
-    private bool _alac;
 
     private string _clientUniqueKey;
     private string _codeVerifier;
     private string _codeChallenge;
-
-    public void UpdateUser(TidalUser user) => _activeUser = user;
 
     public string GetPkceLoginUrl()
     {
