@@ -4,9 +4,11 @@ using TidalSharp;
 string dataDir = Path.Combine(Directory.GetCurrentDirectory(), "TidalSharpData");
 
 var client = new TidalClient(dataDir);
-bool loggedIn = await client.Login();
+Console.WriteLine($"Current logged in state (should be False): " + await client.IsLoggedIn());
 
-if (!loggedIn)
+bool hasExistingLogin = await client.Login();
+
+if (!hasExistingLogin)
 {
     Console.WriteLine("No existing user data.");
 
@@ -19,4 +21,10 @@ if (!loggedIn)
     await client.Login(resultUrl);
 }
 
-Console.WriteLine("Logged in.");
+Console.WriteLine("Should be logged in, ensuring...");
+
+bool loggedIn = await client.IsLoggedIn();
+if (!loggedIn)
+    Console.WriteLine("Failed to login.");
+else
+    Console.WriteLine("Successful.");

@@ -59,6 +59,7 @@ public class TidalUser
     public string TokenType => _data.TokenType;
     public DateTime ExpirationDate { get; init; }
 
+    public long UserId => _data.UserId;
     public string CountryCode => _sessionInfo?.CountryCode ?? "";
     public string SessionID => _sessionInfo?.SessionId ?? "";
 }

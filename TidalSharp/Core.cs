@@ -56,6 +56,22 @@ public class TidalClient
         return false;
     }
 
+    public async Task<bool> IsLoggedIn()
+    {
+        if (_activeUser == null || _activeUser.SessionID == "")
+            return false;
+
+        try
+        {
+            var res = await API.Call(HttpMethod.Get, $"users/{_activeUser.UserId}/subscription");
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private async Task<bool> CheckForStoredUser(bool doPkce = true)
     {
         if (Session.AudioQuality != AudioQuality.HI_RES_LOSSLESS)
