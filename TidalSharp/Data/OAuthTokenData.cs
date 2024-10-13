@@ -2,6 +2,7 @@
 
 namespace TidalSharp.Data;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 public class OAuthTokenData
 {
     [JsonProperty("scope")]
@@ -106,3 +107,4 @@ public class OAuthTokenData
         public bool NewUser { get; set; }
     }
 }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
