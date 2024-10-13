@@ -20,7 +20,7 @@ public class TidalUser
 
     internal async Task GetSession(API api)
     {
-        JObject result = await api.Call(HttpMethod.Get, "sessions", null, null, new() { { "Authorization", $"{_data.TokenType} {_data.AccessToken}" } });
+        JObject result = await api.Call(HttpMethod.Get, "sessions", headers: new() { { "Authorization", $"{_data.TokenType} {_data.AccessToken}" } });
 
         try
         {
