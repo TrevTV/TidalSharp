@@ -28,3 +28,12 @@ if (!loggedIn)
     Console.WriteLine("Failed to login.");
 else
     Console.WriteLine("Successful.");
+
+var tidalUrl = TidalURL.Parse("https://tidal.com/browse/mix/01613ec5953d5060ec4b61a28e522c");
+tidalUrl.Dump();
+
+(await tidalUrl.GetAssociatedTracks(client)).Dump();
+(await tidalUrl.GetCoverUrl(client, TidalSharp.Data.MediaResolution.s160)).Dump();
+(await tidalUrl.GetTitle(client)).Dump();
+
+Console.WriteLine("-----------------------");
