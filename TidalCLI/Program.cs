@@ -12,7 +12,7 @@ if (!hasExistingLogin)
 {
     Console.WriteLine("No existing user data.");
 
-    var url = client.Session.GetPkceLoginUrl();
+    var url = client.GetPkceLoginUrl();
     Console.WriteLine(url);
 
     Console.WriteLine("Enter resulting url: ");

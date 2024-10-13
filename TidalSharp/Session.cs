@@ -6,7 +6,7 @@ using TidalSharp.Data;
 
 namespace TidalSharp;
 
-public class Session
+internal class Session
 {
     internal Session(HttpClient client, AudioQuality audioQuality, VideoQuality videoQuality, int itemLimit = 1000, bool alac = true)
     {
@@ -36,7 +36,7 @@ public class Session
     private string _codeVerifier;
     private string _codeChallenge;
 
-    public string GetPkceLoginUrl()
+    internal string GetPkceLoginUrl()
     {
         var parameters = new Dictionary<string, string>
         {

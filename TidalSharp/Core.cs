@@ -19,13 +19,13 @@ public class TidalClient
         _httpClient.DefaultRequestHeaders.Add("X-Tidal-Token", Globals.CLIENT_ID);
 
         // TODO: lazy defaults
-        Session = new(_httpClient, AudioQuality.HIGH, VideoQuality.HIGH);
-        API = new(_httpClient, Session);
+        _session = new(_httpClient, AudioQuality.HIGH, VideoQuality.HIGH);
+        API = new(_httpClient, _session);
     }
 
-    public Session Session { get; init; }
     public API API { get; init; }
 
+    private Session _session;
     private TidalUser? _activeUser;
     private bool _isPkce;
 
@@ -43,7 +43,7 @@ public class TidalClient
         if (string.IsNullOrEmpty(redirectUri))
             return false;
 
-        var data = await Session.GetOAuthDataFromRedirect(redirectUri);
+        var data = await _session.GetOAuthDataFromRedirect(redirectUri);
         if (data == null) return false;
 
         var user = new TidalUser(data, _userJsonPath, true);
@@ -72,9 +72,11 @@ public class TidalClient
         }
     }
 
+    public string GetPkceLoginUrl() => _session.GetPkceLoginUrl();
+
     private async Task<bool> CheckForStoredUser(bool doPkce = true)
     {
-        if (Session.AudioQuality != AudioQuality.HI_RES_LOSSLESS)
+        if (_session.AudioQuality != AudioQuality.HI_RES_LOSSLESS)
             doPkce = false;
 
         _isPkce = doPkce;
