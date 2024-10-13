@@ -8,33 +8,23 @@ namespace TidalSharp;
 public class TidalUser
 {
     [JsonConstructor]
-    internal TidalUser(OAuthTokenData data, bool isPkce)
+    internal TidalUser(OAuthTokenData data, string? jsonPath, bool isPkce)
     {
         _data = data;
+        _jsonPath = jsonPath;
         IsPkce = isPkce;
         
         DateTime now = DateTime.UtcNow;
         ExpirationDate = now.AddSeconds(data.ExpiresIn);
     }
 
-    internal async Task GetSession(HttpClient httpClient)
+    internal async Task GetSession(API api)
     {
-        // TODO: transition this to use a standard Requests class like in tidalapi to allow for auto-token refreshing
-        HttpRequestMessage request = new()
-        {
-            RequestUri = new(Globals.API_V1_LOCATION + "sessions"),
-            Method = HttpMethod.Get,
-        };
-        request.Headers.Add("Authorization", $"{_data.TokenType} {_data.AccessToken}");
-
-        HttpResponseMessage response = await httpClient.SendAsync(request);
-
-        if (!response.IsSuccessStatusCode)
-            throw new Exception($"Session request failed: {await response.Content.ReadAsStringAsync()}");
+        JObject result = await api.Call(HttpMethod.Get, "sessions", null, null, new() { { "Authorization", $"{_data.TokenType} {_data.AccessToken}" } });
 
         try
         {
-            _sessionInfo = JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<SessionInfo>();
+            _sessionInfo = result.ToObject<SessionInfo>();
         }
         catch
         {
@@ -42,10 +32,24 @@ public class TidalUser
         }
     }
 
+    internal async Task UpdateOAuthTokenData(OAuthTokenData data)
+    {
+        // TODO: i am unsure if a Session update is needed here
+        _data = data;
+        await WriteToFile();
+    }
+
+    internal async Task WriteToFile()
+    {
+        if (_jsonPath != null)
+            await File.WriteAllTextAsync(_jsonPath, JsonConvert.SerializeObject(this));
+    }
+
+    private string? _jsonPath;
+
     [JsonProperty("Data")]
     private OAuthTokenData _data;
     private SessionInfo? _sessionInfo;
-
 
     [JsonProperty("IsPkce")]
     public bool IsPkce { get; init; }

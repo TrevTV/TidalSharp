@@ -60,6 +60,35 @@ public class Session
         return $"{Globals.API_PKCE_AUTH}?{queryString}";
     }
 
+    internal async Task<bool> AttemptTokenRefresh(TidalUser user)
+    {
+        var data = new Dictionary<string, string>
+            {
+                { "grant_type", "refresh_token" },
+                { "refresh_token", user.RefreshToken },
+                { "client_id", user.IsPkce ? Globals.CLIENT_ID_PKCE : Globals.CLIENT_ID },
+                { "client_secret", user.IsPkce ? Globals.CLIENT_SECRET_PKCE : Globals.CLIENT_SECRET }
+            };
+
+        var content = new FormUrlEncodedContent(data);
+        var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content);
+
+        if (!response.IsSuccessStatusCode)
+            return false;
+
+        try
+        {
+            var tokenData = JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<OAuthTokenData>()!;
+            await user.UpdateOAuthTokenData(tokenData);
+            await user.WriteToFile();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     internal async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri)
     {
         // TODO: custom exceptions for the errors here
@@ -84,7 +113,7 @@ public class Session
             };
 
         var content = new FormUrlEncodedContent(data);
-        HttpResponseMessage response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content);
+        var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content);
 
         if (!response.IsSuccessStatusCode)
             throw new Exception($"Login failed: {await response.Content.ReadAsStringAsync()}");

@@ -3,7 +3,7 @@ using TidalSharp;
 
 string dataDir = Path.Combine(Directory.GetCurrentDirectory(), "TidalSharpData");
 
-var client = new TidalClient();
+var client = new TidalClient(dataDir);
 bool loggedIn = await client.Login();
 
 if (!loggedIn)

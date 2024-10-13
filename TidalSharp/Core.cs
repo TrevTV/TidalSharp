@@ -20,9 +20,11 @@ public class TidalClient
 
         // TODO: lazy defaults
         Session = new(_httpClient, AudioQuality.HIGH, VideoQuality.HIGH);
+        API = new(_httpClient, Session);
     }
 
     public Session Session { get; init; }
+    public API API { get; init; }
 
     private TidalUser? _activeUser;
     private bool _isPkce;
@@ -44,14 +46,12 @@ public class TidalClient
         var data = await Session.GetOAuthDataFromRedirect(redirectUri);
         if (data == null) return false;
 
-        var user = new TidalUser(data, true);
-        await user.GetSession(_httpClient);
-
-        if (_dataPath != null && _userJsonPath != null)
-            await File.WriteAllTextAsync(_userJsonPath, JsonConvert.SerializeObject(user));
+        var user = new TidalUser(data, _userJsonPath, true);
+        await user.GetSession(API);
+        await user.WriteToFile();
 
         _activeUser = user;
-        Session.UpdateUser(user);
+        API.UpdateUser(user);
 
         return false;
     }
@@ -71,10 +71,10 @@ public class TidalClient
                 var user = JsonConvert.DeserializeObject<TidalUser>(userData);
                 if (user == null) return false;
 
-                await user.GetSession(_httpClient);
+                await user.GetSession(API);
 
                 _activeUser = user;
-                Session.UpdateUser(user);
+                API.UpdateUser(user);
 
                 return true;
             }
