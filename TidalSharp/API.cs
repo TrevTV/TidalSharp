@@ -1,10 +1,12 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using TidalSharp.Data;
 
 namespace TidalSharp;
 
+// TODO: cancellation tokens
 public class API
 {
     internal API(HttpClient client, Session session)
@@ -16,6 +18,43 @@ public class API
     private HttpClient _httpClient;
     private Session _session;
     private TidalUser? _activeUser;
+
+    public async Task<JObject> GetTrack(string id) => await Call(HttpMethod.Get, $"tracks/{id}");
+
+    public async Task<JObject> GetAlbum(string id) => await Call(HttpMethod.Get, $"albums/{id}");
+    public async Task<JObject> GetAlbumTracks(string id) => await Call(HttpMethod.Get, $"albums/{id}/tracks");
+
+    public async Task<JObject> GetArtist(string id) => await Call(HttpMethod.Get, $"artists/{id}");
+    public async Task<JObject> GetArtistAlbums(string id, FilterOptions filter = FilterOptions.ALL) => await Call(HttpMethod.Get, $"artists/{id}/albums",
+        urlParameters: new()
+        {
+            { "filter", filter.ToString() }
+        }
+    );
+
+    public async Task<JObject> GetPlaylist(string id) => await Call(HttpMethod.Get, $"playlists/{id}");
+    public async Task<JObject> GetPlaylistTracks(string id) => await Call(HttpMethod.Get, $"playlists/{id}/tracks");
+
+    public async Task<JObject> GetVideo(string id) => await Call(HttpMethod.Get, $"videos/{id}");
+
+    public async Task<JObject> GetMix(string id)
+    {
+        var result = await Call(HttpMethod.Get, "pages/mix",
+            urlParameters: new()
+            {
+                { "mixId", id },
+                { "deviceType", "BROWSER" }
+            }
+        );
+
+        var refactoredObj = new JObject()
+        {
+            { "mix", result["rows"]![0]!["modules"]![0]!["mix"] },
+            { "tracks", result["rows"]![1]!["modules"]![0]!["pagedList"] }
+        };
+
+        return refactoredObj;
+    }
 
     internal void UpdateUser(TidalUser user) => _activeUser = user;
 
