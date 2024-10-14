@@ -47,11 +47,12 @@ public class TidalClient
         if (data == null) return false;
 
         var user = new TidalUser(data, _userJsonPath, true);
-        await user.GetSession(API);
-        await user.WriteToFile();
 
         _activeUser = user;
         API.UpdateUser(user);
+
+        await user.GetSession(API);
+        await user.WriteToFile();
 
         return false;
     }
@@ -89,10 +90,10 @@ public class TidalClient
                 var user = JsonConvert.DeserializeObject<TidalUser>(userData);
                 if (user == null) return false;
 
-                await user.GetSession(API);
-
                 _activeUser = user;
                 API.UpdateUser(user);
+
+                await user.GetSession(API);
 
                 return true;
             }

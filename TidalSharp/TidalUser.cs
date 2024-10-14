@@ -20,7 +20,7 @@ public class TidalUser
 
     internal async Task GetSession(API api)
     {
-        JObject result = await api.Call(HttpMethod.Get, "sessions", headers: new() { { "Authorization", $"{_data.TokenType} {_data.AccessToken}" } });
+        JObject result = await api.Call(HttpMethod.Get, "sessions");
 
         try
         {
@@ -32,10 +32,17 @@ public class TidalUser
         }
     }
 
-    internal async Task UpdateOAuthTokenData(OAuthTokenData data)
+    internal async Task RefreshOAuthTokenData(OAuthTokenData data)
     {
-        // TODO: i am unsure if a Session update is needed here
-        _data = data;
+        if (_data == null)
+            throw new Exception("Attempting to refresh a user with no existing data.");
+
+        _data.AccessToken = data.AccessToken;
+        _data.ExpiresIn = data.ExpiresIn;
+
+        DateTime now = DateTime.UtcNow;
+        ExpirationDate = now.AddSeconds(data.ExpiresIn);
+
         await WriteToFile();
     }
 
@@ -57,7 +64,7 @@ public class TidalUser
     public string AccessToken => _data.AccessToken;
     public string RefreshToken => _data.RefreshToken;
     public string TokenType => _data.TokenType;
-    public DateTime ExpirationDate { get; init; }
+    public DateTime ExpirationDate { get; private set; }
 
     public long UserId => _data.UserId;
     public string CountryCode => _sessionInfo?.CountryCode ?? "";

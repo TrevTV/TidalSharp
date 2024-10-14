@@ -73,8 +73,8 @@ public class API
         urlParameters["countryCode"] = _activeUser?.CountryCode ?? "";
         urlParameters["limit"] = _session.ItemLimit.ToString();
 
-        if (_activeUser != null && !headers.ContainsKey("Authorization"))
-            headers.Add("Authorization", $"{_activeUser.TokenType} {_activeUser.AccessToken}");
+        if (_activeUser != null)
+            headers["Authorization"] = $"{_activeUser.TokenType} {_activeUser.AccessToken}";
 
         baseUrl ??= Globals.API_V1_LOCATION;
 
@@ -112,7 +112,7 @@ public class API
         if (!response.IsSuccessStatusCode && !string.IsNullOrEmpty(_activeUser?.RefreshToken))
         {
             string? userMessage = json.GetValue("userMessage")?.ToString();
-            if (userMessage != null && userMessage.StartsWith("The token has expired."))
+            if (userMessage != null && userMessage.Contains("The token has expired."))
             {
                 bool refreshed = await _session.AttemptTokenRefresh(_activeUser);
                 if (refreshed)

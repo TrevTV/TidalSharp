@@ -78,9 +78,9 @@ internal class Session
 
         try
         {
-            var tokenData = JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<OAuthTokenData>()!;
-            await user.UpdateOAuthTokenData(tokenData);
-            await user.WriteToFile();
+            var responseStr = await response.Content.ReadAsStringAsync();
+            var tokenData = JObject.Parse(responseStr).ToObject<OAuthTokenData>()!;
+            await user.RefreshOAuthTokenData(tokenData);
             return true;
         }
         catch
