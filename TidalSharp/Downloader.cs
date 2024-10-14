@@ -26,17 +26,13 @@ public class Downloader
 
         var outStream = new MemoryStream();
 
-        int i = 0;
         foreach (var url in urls)
         {
-            i++;
-            Console.WriteLine("Downloading chunk " + i.ToString());
             var message = new HttpRequestMessage(HttpMethod.Get, url);
             var response = await _client.SendAsync(message);
             var stream = await response.Content.ReadAsStreamAsync();
 
             stream.CopyTo(outStream);
-            Console.WriteLine("done");
         }
 
         // TODO: decrypt if needed
