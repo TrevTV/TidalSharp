@@ -21,9 +21,11 @@ public class TidalClient
         // TODO: lazy defaults
         _session = new(_httpClient, AudioQuality.HIGH, VideoQuality.HIGH);
         API = new(_httpClient, _session);
+        Downloader = new(_httpClient, API, _session);
     }
 
     public API API { get; init; }
+    public Downloader Downloader { get; init; }
 
     private Session _session;
     private TidalUser? _activeUser;

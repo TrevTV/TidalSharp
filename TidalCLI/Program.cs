@@ -37,3 +37,6 @@ tidalUrl.Dump();
 (await tidalUrl.GetTitle(client)).Dump();
 
 Console.WriteLine("-----------------------");
+
+var trackBytes = await client.Downloader.GetRawTrackBytes("46755209");
+File.WriteAllBytes(Path.Combine(dataDir, "test.m4a"), trackBytes);
