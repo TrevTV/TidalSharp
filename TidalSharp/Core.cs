@@ -90,6 +90,8 @@ public class TidalClient
                 var user = JsonConvert.DeserializeObject<TidalUser>(userData);
                 if (user == null) return false;
 
+                user.UpdateJsonPath(_userJsonPath);
+
                 _activeUser = user;
                 API.UpdateUser(user);
 

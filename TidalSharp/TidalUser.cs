@@ -46,6 +46,8 @@ public class TidalUser
         await WriteToFile();
     }
 
+    internal void UpdateJsonPath(string? jsonPath) => _jsonPath = jsonPath;
+
     internal async Task WriteToFile()
     {
         if (_jsonPath != null)
