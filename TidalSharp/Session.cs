@@ -8,7 +8,9 @@ namespace TidalSharp;
 
 internal class Session
 {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value; RegenerateCodes sets them, no idea why it's complaining
     internal Session(HttpClient client, AudioQuality audioQuality, VideoQuality videoQuality, int itemLimit = 1000, bool alac = true)
+#pragma warning restore CS8618
     {
         AudioQuality = audioQuality;
         VideoQuality = videoQuality;
@@ -18,11 +20,7 @@ internal class Session
 
         ItemLimit = itemLimit > 10000 ? 10000 : itemLimit;
 
-        _clientUniqueKey = $"{BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0):x}";
-        _codeVerifier = ToBase64UrlEncoded(RandomNumberGenerator.GetBytes(32));
-
-        using var sha256 = SHA256.Create();
-        _codeChallenge = ToBase64UrlEncoded(sha256.ComputeHash(Encoding.UTF8.GetBytes(_codeVerifier)));
+        RegenerateCodes();
     }
 
     public AudioQuality AudioQuality { get; init; }
@@ -36,7 +34,7 @@ internal class Session
     private string _codeVerifier;
     private string _codeChallenge;
 
-    internal string GetPkceLoginUrl()
+    public string GetPkceLoginUrl()
     {
         var parameters = new Dictionary<string, string>
         {
@@ -60,7 +58,7 @@ internal class Session
         return $"{Globals.API_PKCE_AUTH}?{queryString}";
     }
 
-    internal async Task<bool> AttemptTokenRefresh(TidalUser user)
+    public async Task<bool> AttemptTokenRefresh(TidalUser user)
     {
         var data = new Dictionary<string, string>
             {
@@ -89,7 +87,7 @@ internal class Session
         }
     }
 
-    internal async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri)
+    public async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri)
     {
         // TODO: custom exceptions for the errors here
 
@@ -115,6 +113,8 @@ internal class Session
         var content = new FormUrlEncodedContent(data);
         var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content);
 
+        RegenerateCodes();
+
         if (!response.IsSuccessStatusCode)
             throw new Exception($"Login failed: {await response.Content.ReadAsStringAsync()}");
 
@@ -126,6 +126,15 @@ internal class Session
         {
             throw new Exception("Invalid response for the authorization code.");
         }
+    }
+
+    private void RegenerateCodes()
+    {
+        _clientUniqueKey = $"{BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0):x}";
+        _codeVerifier = ToBase64UrlEncoded(RandomNumberGenerator.GetBytes(32));
+
+        using var sha256 = SHA256.Create();
+        _codeChallenge = ToBase64UrlEncoded(sha256.ComputeHash(Encoding.UTF8.GetBytes(_codeVerifier)));
     }
 
     private static string ToBase64UrlEncoded(byte[] data) => Convert.ToBase64String(data).Replace("+", "-").Replace("/", "_").TrimEnd('=');
