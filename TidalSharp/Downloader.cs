@@ -35,7 +35,14 @@ public class Downloader
             stream.CopyTo(outStream);
         }
 
-        // TODO: decrypt if needed
+        // TODO: test decryption, don't know of any tracks yet that need it
+
+        if (!string.IsNullOrEmpty(streamManifest.EncryptionKey))
+        {
+            var keyNonce = Decryption.DecryptSecurityToken(streamManifest.EncryptionKey);
+            var decryptedStream = new MemoryStream();
+            Decryption.DecryptStream(outStream, decryptedStream, keyNonce.key, keyNonce.nonce);
+        }
 
         return outStream.ToArray();
     }
