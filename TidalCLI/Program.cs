@@ -40,20 +40,26 @@ Console.WriteLine("-----------------------");
 
 Console.WriteLine("Downloading with bytes...");
 using var downloadData = await client.Downloader.GetRawTrackBytes("389909667");
+Console.WriteLine("Download complete, applying metadata");
+await client.Downloader.ApplyMetadataToTrackBytes("389909667", downloadData);
 File.WriteAllBytes(Path.Combine(dataDir, "test_byte" + downloadData.FileExtension), downloadData.Data);
-Console.WriteLine("Download complete");
+Console.WriteLine("Done");
 
 Console.WriteLine("-----------------------");
 
 Console.WriteLine("Downloading with stream...");
 using var downloadData2 = await client.Downloader.GetRawTrackStream("256946543");
+Console.WriteLine("Download complete, applying metadata");
+await client.Downloader.ApplyMetadataToTrackStream("256946543", downloadData2);
 using FileStream fileStream = File.Open(Path.Combine(dataDir, "test_stream" + downloadData2.FileExtension), FileMode.Create);
 downloadData2.Data.CopyTo(fileStream);
-Console.WriteLine("Download complete");
+Console.WriteLine("Done");
 
 Console.WriteLine("-----------------------");
 
 Console.WriteLine("Downloading with file...");
 var ext = await client.Downloader.GetExtensionForTrack("256946552");
 await client.Downloader.WriteRawTrackToFile("256946552", Path.Combine(dataDir, "test_file" + ext));
-Console.WriteLine("Download complete");
+Console.WriteLine("Download complete, applying metadata");
+await client.Downloader.ApplyMetadataToFile("256946552", Path.Combine(dataDir, "test_file" + ext));
+Console.WriteLine("Done");
