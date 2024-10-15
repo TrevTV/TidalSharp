@@ -26,9 +26,9 @@ public class TidalClient
 
     public API API { get; init; }
     public Downloader Downloader { get; init; }
+    private TidalUser? ActiveUser { get; set; }
 
     private Session _session;
-    private TidalUser? _activeUser;
     private bool _isPkce;
 
     private string? _dataPath;
@@ -50,7 +50,7 @@ public class TidalClient
 
         var user = new TidalUser(data, _userJsonPath, true);
 
-        _activeUser = user;
+        ActiveUser = user;
         API.UpdateUser(user);
 
         await user.GetSession(API);
@@ -61,12 +61,12 @@ public class TidalClient
 
     public async Task<bool> IsLoggedIn()
     {
-        if (_activeUser == null || _activeUser.SessionID == "")
+        if (ActiveUser == null || ActiveUser.SessionID == "")
             return false;
 
         try
         {
-            var res = await API.Call(HttpMethod.Get, $"users/{_activeUser.UserId}/subscription");
+            var res = await API.Call(HttpMethod.Get, $"users/{ActiveUser.UserId}/subscription");
             return true;
         }
         catch
@@ -94,7 +94,7 @@ public class TidalClient
 
                 user.UpdateJsonPath(_userJsonPath);
 
-                _activeUser = user;
+                ActiveUser = user;
                 API.UpdateUser(user);
 
                 await user.GetSession(API);
