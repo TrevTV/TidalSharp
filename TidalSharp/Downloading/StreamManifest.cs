@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Text;
 using TidalSharp.Data;
+using TidalSharp.Exceptions;
 
 namespace TidalSharp.Downloading;
 
@@ -44,7 +45,7 @@ internal class StreamManifest
             EncryptionKey = json["encryptionKey"]?.ToString();
         }
         else
-            throw new Exception("Unknown manifest."); // TODO: custom exception
+            throw new UnsupportedManifestException("Unknown manifest, this track can't be downloaded.");
 
         FileExtension = ParseExtension(Urls[0], Codecs);
     }

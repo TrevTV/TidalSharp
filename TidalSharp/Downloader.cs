@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using TidalSharp.Data;
 using TidalSharp.Downloading;
+using TidalSharp.Exceptions;
 
 namespace TidalSharp;
 
@@ -57,7 +58,7 @@ public class Downloader
 
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
-            throw new Exception($"The image with {id} with resolution {resolution} is unavailable."); // TODO: custom extension
+            throw new UnavailableMediaException($"The image with {id} with resolution {resolution} is unavailable.");
         }
 
         return await response.Content.ReadAsByteArrayAsync(token);

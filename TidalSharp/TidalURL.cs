@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using TidalSharp.Data;
+using TidalSharp.Exceptions;
 
 namespace TidalSharp;
 
@@ -65,7 +66,7 @@ public class TidalURL(string url, EntityType type, string id)
             id = Regex.Match(url, "/mix/(\\S+)").Groups[1].Value;
         }
         else
-            throw new Exception($"Unable to determine type of URL \"{url}\".");
+            throw new InvalidURLException($"Unable to determine type of URL \"{url}\".");
 
         return new TidalURL(url, type, id);
     }

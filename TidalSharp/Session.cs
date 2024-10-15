@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using TidalSharp.Data;
+using TidalSharp.Exceptions;
 
 namespace TidalSharp;
 
@@ -89,15 +90,13 @@ internal class Session
 
     public async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri)
     {
-        // TODO: custom exceptions for the errors here
-
         if (string.IsNullOrEmpty(uri) || !uri.StartsWith("https://"))
-            throw new Exception("The provided redirect URL looks wrong: " + uri);
+            throw new InvalidURLException("The provided redirect URL looks wrong: " + uri);
 
         var queryParams = HttpUtility.ParseQueryString(new Uri(uri).Query);
         string? code = queryParams.Get("code");
         if (string.IsNullOrEmpty(code))
-            throw new Exception("Authorization code not found in the redirect URL.");
+            throw new InvalidURLException("Authorization code not found in the redirect URL.");
 
         var data = new Dictionary<string, string>
             {
@@ -116,7 +115,7 @@ internal class Session
         RegenerateCodes();
 
         if (!response.IsSuccessStatusCode)
-            throw new Exception($"Login failed: {await response.Content.ReadAsStringAsync()}");
+            throw new APIException($"Login failed: {await response.Content.ReadAsStringAsync()}");
 
         try
         {
@@ -124,7 +123,7 @@ internal class Session
         }
         catch
         {
-            throw new Exception("Invalid response for the authorization code.");
+            throw new APIException("Invalid response for the authorization code.");
         }
     }
 

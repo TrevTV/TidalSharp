@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 using TidalSharp.Data;
+using TidalSharp.Exceptions;
 
 namespace TidalSharp;
 
@@ -25,7 +26,7 @@ public class API
         {
             return (await Call(HttpMethod.Get, $"tracks/{id}/lyrics")).ToObject<TidalLyrics>()!;
         }
-        catch (Exception) // specifiy custom exception
+        catch (ResourceNotFoundException)
         {
             return null;
         }
@@ -134,27 +135,26 @@ public class API
         {
             JToken? errors = json["errors"];
             if (errors != null && errors.Any())
-                throw new Exception(errors[0]!["detail"]!.ToString());
+                throw new ResourceNotFoundException(errors[0]!["detail"]!.ToString());
 
             JToken? userMessage = json["userMessage"];
             if (userMessage != null)
-                throw new Exception(userMessage.ToString());
+                throw new ResourceNotFoundException(userMessage.ToString());
 
-            throw new Exception(json.ToString());
+            throw new ResourceNotFoundException(json.ToString());
         }
 
         if (!response.IsSuccessStatusCode)
         {
-            // TODO: custom exceptions
             JToken? errors = json["errors"];
             if (errors != null && errors.Any())
-                throw new Exception(errors[0]!["detail"]!.ToString());
+                throw new APIException(errors[0]!["detail"]!.ToString());
 
             JToken? userMessage = json["userMessage"];
             if (userMessage != null)
-                throw new Exception(userMessage.ToString());
+                throw new APIException(userMessage.ToString());
 
-            throw new Exception(json.ToString());
+            throw new APIException(json.ToString());
         }
 
         return json;

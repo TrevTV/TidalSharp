@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TidalSharp.Data;
+using TidalSharp.Exceptions;
 
 namespace TidalSharp;
 
@@ -28,14 +29,14 @@ public class TidalUser
         }
         catch
         {
-            throw new Exception("Invalid response for session info.");
+            throw new APIException("Invalid response for session info.");
         }
     }
 
     internal async Task RefreshOAuthTokenData(OAuthTokenData data)
     {
         if (_data == null)
-            throw new Exception("Attempting to refresh a user with no existing data.");
+            throw new InvalidOperationException("Attempting to refresh a user with no existing data.");
 
         _data.AccessToken = data.AccessToken;
         _data.ExpiresIn = data.ExpiresIn;
