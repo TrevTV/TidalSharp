@@ -1,4 +1,5 @@
-﻿using TidalSharp.Data;
+﻿using Newtonsoft.Json;
+using TidalSharp.Data;
 using TidalSharp.Downloading;
 
 namespace TidalSharp;
@@ -46,6 +47,19 @@ public class Downloader
         var trackStreamData = await GetTrackStreamData(trackId);
         var streamManifest = new StreamManifest(trackStreamData);
         return streamManifest.FileExtension;
+    }
+
+    public async Task<byte[]> GetImageBytes(string id, MediaResolution resolution, CancellationToken token = default)
+    {
+        HttpRequestMessage message = new(HttpMethod.Get, Globals.GetImageUrl(id, resolution));
+        HttpResponseMessage response = await _client.SendAsync(message, token);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            throw new Exception($"The image with {id} with resolution {resolution} is unavailable."); // TODO: custom extension
+        }
+
+        return await response.Content.ReadAsByteArrayAsync(token);
     }
 
     private async Task<(MemoryStream stream, StreamManifest manifest)> GetTrackStream(string trackId)
