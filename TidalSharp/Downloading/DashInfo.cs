@@ -46,7 +46,7 @@ internal class DashInfo
     public TimeSpan Duration { get; init; }
     public string ContentType { get; init; }
     public string MimeType { get; init; }
-    public string Codecs { get; init; } // TODO: parse into an enum
+    public string Codecs { get; init; }
     public string FirstUrl { get; init; }
     public string MediaUrl { get; init; }
     public uint TimeScale { get; init; }
