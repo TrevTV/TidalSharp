@@ -60,9 +60,8 @@ internal class StreamManifest
                 return ".mp4";
             if (codec.Contains("flac"))
                 return ".flac";
-            // TODO: tidalapi has a final else statement that sets it to m4a before mp4, not sure if thats supposed to be there or what
 
-            return ".mp4";
+            return ".m4a";
         }
 
         if (url.Contains(".ts"))
