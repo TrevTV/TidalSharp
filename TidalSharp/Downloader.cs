@@ -16,15 +16,14 @@ public class Downloader
     private readonly API _api;
     private readonly Session _session;
 
-    // TODO: rework the api so that we can return additional info like extensions
-    public async Task<byte[]> GetRawTrackBytes(string trackId)
+    public async Task<DownloadData<byte[]>> GetRawTrackBytes(string trackId)
     {
         var trackStreamData = await GetTrackStreamData(trackId);
         var streamManifest = new StreamManifest(trackStreamData);
 
         var urls = streamManifest.Urls;
 
-        var outStream = new MemoryStream();
+        using var outStream = new MemoryStream();
 
         foreach (var url in urls)
         {
@@ -39,12 +38,14 @@ public class Downloader
 
         if (!string.IsNullOrEmpty(streamManifest.EncryptionKey))
         {
-            var keyNonce = Decryption.DecryptSecurityToken(streamManifest.EncryptionKey);
-            var decryptedStream = new MemoryStream();
-            Decryption.DecryptStream(outStream, decryptedStream, keyNonce.key, keyNonce.nonce);
+            var (key, nonce) = Decryption.DecryptSecurityToken(streamManifest.EncryptionKey);
+            using var decryptedStream = new MemoryStream();
+            Decryption.DecryptStream(outStream, decryptedStream, key, nonce);
+
+            return new(decryptedStream.ToArray(), streamManifest.FileExtension);
         }
 
-        return outStream.ToArray();
+        return new(outStream.ToArray(), streamManifest.FileExtension);
     }
 
     private async Task<TrackStreamData> GetTrackStreamData(string trackId)
@@ -59,4 +60,10 @@ public class Downloader
         );
         return result.ToObject<TrackStreamData>()!;
     }
+}
+
+public class DownloadData<T>(T data, string fileExtension)
+{
+    public T Data { get; set; } = data;
+    public string FileExtension { get; set; } = fileExtension;
 }
