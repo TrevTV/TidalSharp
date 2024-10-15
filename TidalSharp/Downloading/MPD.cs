@@ -423,7 +423,7 @@ internal class SubRepresentation : RepresentationBase
 
         Level = node.GetAttributeValue<uint>("level");
         Bandwidth = node.GetAttributeValue<uint>("bandwidth");
-        /*DependencyLevel = node.GetAttributeValue<uint[]>("dependencyLevel");*/  // TODO: i haven't seen any examples of this so im not too sure how to read it into an array
+        /*DependencyLevel = node.GetAttributeValue<uint[]>("dependencyLevel");*/  // i haven't seen any examples of this so im not too sure how to read it into an array
         ContentComponent = node.GetAttributeValue<string[]>("contentComponent");
     }
 }
@@ -564,7 +564,7 @@ internal class Subset : IMPDNode
     public void Parse(XmlNode node)
     {
         Id = node.GetAttributeValue<string>("id");
-        /*Contains = node.GetAttributeValue<uint[]>("contains")!;*/ // TODO: i haven't seen any examples of this so im not too sure how to read it into an array
+        /*Contains = node.GetAttributeValue<uint[]>("contains")!;*/ // i haven't seen any examples of this so im not too sure how to read it into an array
     }
 }
 
