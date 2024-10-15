@@ -78,17 +78,17 @@ public class TidalURL(string url, EntityType type, string id)
             case EntityType.Track:
                 return [Id];
             case EntityType.Playlist:
-                return (await client.API.GetPlaylistTracks(Id))["items"]!.Select(t => t["id"]!.ToString()).ToArray();
+                return (await client.API.GetPlaylistTracks(Id, token))["items"]!.Select(t => t["id"]!.ToString()).ToArray();
             case EntityType.Album:
-                return (await client.API.GetAlbumTracks(Id))["items"]!.Select(t => t["id"]!.ToString()).ToArray();
+                return (await client.API.GetAlbumTracks(Id, token))["items"]!.Select(t => t["id"]!.ToString()).ToArray();
             case EntityType.Mix:
-                return (await client.API.GetMix(Id))["tracks"]!["items"]!.Select(t => t["id"]!.ToString()).ToArray();
+                return (await client.API.GetMix(Id, token))["tracks"]!["items"]!.Select(t => t["id"]!.ToString()).ToArray();
             case EntityType.Artist:
                 {
-                    string[] albumIds = (await client.API.GetArtistAlbums(Id))["items"]!.Select(a => a["id"]!.ToString()).ToArray();
+                    string[] albumIds = (await client.API.GetArtistAlbums(Id, FilterOptions.ALL, token))["items"]!.Select(a => a["id"]!.ToString()).ToArray();
                     List<string> trackIds = [];
                     for (int i = 0; i < albumIds.Length; i++)
-                        trackIds.AddRange((await client.API.GetAlbumTracks(albumIds[i]))["items"]!.Select(t => t["id"]!.ToString()));
+                        trackIds.AddRange((await client.API.GetAlbumTracks(albumIds[i], token))["items"]!.Select(t => t["id"]!.ToString()));
                     return [.. trackIds];
                 }
             case EntityType.Video:
@@ -104,38 +104,38 @@ public class TidalURL(string url, EntityType type, string id)
         {
             case EntityType.Track:
                 {
-                    var data = await client.API.GetTrack(Id);
+                    var data = await client.API.GetTrack(Id, token);
                     return Globals.GetImageUrl(data["album"]!["cover"]!.ToString(), resolution);
                 }
             case EntityType.Album:
                 {
-                    var data = await client.API.GetAlbum(Id);
+                    var data = await client.API.GetAlbum(Id, token);
                     return Globals.GetImageUrl(data["cover"]!.ToString(), resolution);
                 }
             case EntityType.Artist:
                 {
-                    var data = await client.API.GetArtist(Id);
+                    var data = await client.API.GetArtist(Id, token);
                     var picture = data["picture"];
                     if (picture == null) return null;
                     return Globals.GetImageUrl(picture!.ToString(), resolution);
                 }
             case EntityType.Playlist:
                 {
-                    var data = await client.API.GetPlaylist(Id);
+                    var data = await client.API.GetPlaylist(Id, token);
                     var image = data["squareImage"];
                     if (image == null) return null;
                     return Globals.GetImageUrl(image!.ToString(), resolution);
                 }
             case EntityType.Video:
                 {
-                    var data = await client.API.GetVideo(Id);
+                    var data = await client.API.GetVideo(Id, token);
                     var image = data["imageId"];
                     if (image == null) return null;
                     return Globals.GetImageUrl(image!.ToString(), resolution);
                 }
             case EntityType.Mix:
                 {
-                    var data = await client.API.GetMix(Id);
+                    var data = await client.API.GetMix(Id, token);
                     var images = data["mix"]!["images"]!.Children<JProperty>();
 
                     // jank to get the closest size as mixes don't use the regular hash thing
@@ -164,32 +164,32 @@ public class TidalURL(string url, EntityType type, string id)
         {
             case EntityType.Track:
                 {
-                    var data = await client.API.GetTrack(Id);
+                    var data = await client.API.GetTrack(Id, token);
                     return data["title"]!.ToString();
                 }
             case EntityType.Album:
                 {
-                    var data = await client.API.GetAlbum(Id);
+                    var data = await client.API.GetAlbum(Id, token);
                     return data["title"]!.ToString();
                 }
             case EntityType.Artist:
                 {
-                    var data = await client.API.GetArtist(Id);
+                    var data = await client.API.GetArtist(Id, token);
                     return data["name"]!.ToString();
                 }
             case EntityType.Playlist:
                 {
-                    var data = await client.API.GetPlaylist(Id);
+                    var data = await client.API.GetPlaylist(Id, token);
                     return data["title"]!.ToString();
                 }
             case EntityType.Video:
                 {
-                    var data = await client.API.GetVideo(Id);
+                    var data = await client.API.GetVideo(Id, token);
                     return data["title"]!.ToString();
                 }
             case EntityType.Mix:
                 {
-                    var data = await client.API.GetMix(Id);
+                    var data = await client.API.GetMix(Id, token);
                     return data["mix"]!["title"]!.ToString();
                 }
             default:

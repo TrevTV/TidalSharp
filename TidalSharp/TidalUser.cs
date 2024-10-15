@@ -19,9 +19,9 @@ public class TidalUser
         ExpirationDate = now.AddSeconds(data.ExpiresIn);
     }
 
-    internal async Task GetSession(API api)
+    internal async Task GetSession(API api, CancellationToken token = default)
     {
-        JObject result = await api.Call(HttpMethod.Get, "sessions");
+        JObject result = await api.Call(HttpMethod.Get, "sessions", token: token);
 
         try
         {
@@ -33,7 +33,7 @@ public class TidalUser
         }
     }
 
-    internal async Task RefreshOAuthTokenData(OAuthTokenData data)
+    internal async Task RefreshOAuthTokenData(OAuthTokenData data, CancellationToken token = default)
     {
         if (_data == null)
             throw new InvalidOperationException("Attempting to refresh a user with no existing data.");
@@ -44,15 +44,15 @@ public class TidalUser
         DateTime now = DateTime.UtcNow;
         ExpirationDate = now.AddSeconds(data.ExpiresIn);
 
-        await WriteToFile();
+        await WriteToFile(token);
     }
 
     internal void UpdateJsonPath(string? jsonPath) => _jsonPath = jsonPath;
 
-    internal async Task WriteToFile()
+    internal async Task WriteToFile(CancellationToken token = default)
     {
         if (_jsonPath != null)
-            await File.WriteAllTextAsync(_jsonPath, JsonConvert.SerializeObject(this));
+            await File.WriteAllTextAsync(_jsonPath, JsonConvert.SerializeObject(this), token);
     }
 
     private string? _jsonPath;

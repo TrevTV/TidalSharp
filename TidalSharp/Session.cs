@@ -59,7 +59,7 @@ internal class Session
         return $"{Globals.API_PKCE_AUTH}?{queryString}";
     }
 
-    public async Task<bool> AttemptTokenRefresh(TidalUser user)
+    public async Task<bool> AttemptTokenRefresh(TidalUser user, CancellationToken token = default)
     {
         var data = new Dictionary<string, string>
             {
@@ -70,16 +70,16 @@ internal class Session
             };
 
         var content = new FormUrlEncodedContent(data);
-        var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content);
+        var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content, token);
 
         if (!response.IsSuccessStatusCode)
             return false;
 
         try
         {
-            var responseStr = await response.Content.ReadAsStringAsync();
+            var responseStr = await response.Content.ReadAsStringAsync(token);
             var tokenData = JObject.Parse(responseStr).ToObject<OAuthTokenData>()!;
-            await user.RefreshOAuthTokenData(tokenData);
+            await user.RefreshOAuthTokenData(tokenData, token);
             return true;
         }
         catch
@@ -88,7 +88,7 @@ internal class Session
         }
     }
 
-    public async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri)
+    public async Task<OAuthTokenData?> GetOAuthDataFromRedirect(string? uri, CancellationToken token = default)
     {
         if (string.IsNullOrEmpty(uri) || !uri.StartsWith("https://"))
             throw new InvalidURLException("The provided redirect URL looks wrong: " + uri);
@@ -110,16 +110,16 @@ internal class Session
             };
 
         var content = new FormUrlEncodedContent(data);
-        var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content);
+        var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content, token);
 
         RegenerateCodes();
 
         if (!response.IsSuccessStatusCode)
-            throw new APIException($"Login failed: {await response.Content.ReadAsStringAsync()}");
+            throw new APIException($"Login failed: {await response.Content.ReadAsStringAsync(token)}");
 
         try
         {
-            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<OAuthTokenData>();
+            return JObject.Parse(await response.Content.ReadAsStringAsync(token)).ToObject<OAuthTokenData>();
         }
         catch
         {

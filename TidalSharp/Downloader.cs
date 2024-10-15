@@ -21,15 +21,15 @@ public class Downloader
     private readonly API _api;
     private readonly Session _session;
 
-    public async Task<DownloadData<Stream>> GetRawTrackStream(string trackId)
+    public async Task<DownloadData<Stream>> GetRawTrackStream(string trackId, CancellationToken token = default)
     {
-        var (stream, manifest) = await GetTrackStream(trackId);
+        var (stream, manifest) = await GetTrackStream(trackId, token);
         return new(stream, manifest.FileExtension);
     }
 
-    public async Task<DownloadData<byte[]>> GetRawTrackBytes(string trackId)
+    public async Task<DownloadData<byte[]>> GetRawTrackBytes(string trackId, CancellationToken token = default)
     {
-        var (stream, manifest) = await GetTrackStream(trackId);
+        var (stream, manifest) = await GetTrackStream(trackId, token);
         var data = new DownloadData<byte[]>(stream.ToArray(), manifest.FileExtension);
 
         await stream.DisposeAsync();
@@ -37,18 +37,18 @@ public class Downloader
         return data;
     }
 
-    public async Task WriteRawTrackToFile(string trackId, string trackPath)
+    public async Task WriteRawTrackToFile(string trackId, string trackPath, CancellationToken token = default)
     {
-        var (stream, manifest) = await GetTrackStream(trackId);
+        var (stream, manifest) = await GetTrackStream(trackId, token);
         using FileStream fileStream = File.Open(trackPath, FileMode.Create);
 
-        await stream.CopyToAsync(fileStream);
+        await stream.CopyToAsync(fileStream, token);
         await stream.DisposeAsync();
     }
 
-    public async Task<string> GetExtensionForTrack(string trackId)
+    public async Task<string> GetExtensionForTrack(string trackId, CancellationToken token = default)
     {
-        var trackStreamData = await GetTrackStreamData(trackId);
+        var trackStreamData = await GetTrackStreamData(trackId, token);
         var streamManifest = new StreamManifest(trackStreamData);
         return streamManifest.FileExtension;
     }
@@ -97,9 +97,9 @@ public class Downloader
         await ApplyMetadataToTagLibFile(file, trackId, coverResolution, lyrics, token);
     }
 
-    public async Task<(string? plainLyrics, string? syncLyrics)?> FetchLyricsFromTidal(string trackId)
+    public async Task<(string? plainLyrics, string? syncLyrics)?> FetchLyricsFromTidal(string trackId, CancellationToken token = default)
     {
-        var lyrics = await _api.GetTrackLyrics(trackId);
+        var lyrics = await _api.GetTrackLyrics(trackId, token);
         if (lyrics == null)
             return null;
 
@@ -125,9 +125,9 @@ public class Downloader
 
     private async Task ApplyMetadataToTagLibFile(TagLib.File track, string trackId, MediaResolution coverResolution = MediaResolution.s640, string lyrics = "", CancellationToken token = default)
     {
-        JToken trackData = await _api.GetTrack(trackId);
+        JToken trackData = await _api.GetTrack(trackId, token);
         string albumId = trackData["album"]!["id"]!.ToString();
-        JToken albumPage = await _api.GetAlbum(albumId);
+        JToken albumPage = await _api.GetAlbum(albumId, token);
 
         byte[]? albumArt = null;
         try { albumArt = await GetImageBytes(trackData["album"]!["cover"]!.ToString(), coverResolution, token); } catch (UnavailableMediaException) { }
@@ -149,9 +149,9 @@ public class Downloader
 
     // TODO: implement method to extract flacs from the m4a containers
     // tidal-dl-ng uses ffmpeg but thats not ideal in this case
-    private async Task<(MemoryStream stream, StreamManifest manifest)> GetTrackStream(string trackId)
+    private async Task<(MemoryStream stream, StreamManifest manifest)> GetTrackStream(string trackId, CancellationToken token = default)
     {
-        var trackStreamData = await GetTrackStreamData(trackId);
+        var trackStreamData = await GetTrackStreamData(trackId, token);
         var streamManifest = new StreamManifest(trackStreamData);
 
         var urls = streamManifest.Urls;
@@ -161,8 +161,8 @@ public class Downloader
         foreach (var url in urls)
         {
             var message = new HttpRequestMessage(HttpMethod.Get, url);
-            var response = await _client.SendAsync(message);
-            var stream = await response.Content.ReadAsStreamAsync();
+            var response = await _client.SendAsync(message, token);
+            var stream = await response.Content.ReadAsStreamAsync(token);
 
             stream.CopyTo(outStream);
         }
@@ -184,7 +184,7 @@ public class Downloader
         return (outStream, streamManifest);
     }
 
-    private async Task<TrackStreamData> GetTrackStreamData(string trackId)
+    private async Task<TrackStreamData> GetTrackStreamData(string trackId, CancellationToken token = default)
     {
         var result = await _api.Call(HttpMethod.Get, $"tracks/{trackId}/playbackinfopostpaywall",
             urlParameters: new()
@@ -192,7 +192,8 @@ public class Downloader
                 { "playbackmode", "STREAM" },
                 { "assetpresentation", "FULL" },
                 { "audioquality", $"{_session.AudioQuality}" }
-            }
+            },
+            token: token
         );
         return result.ToObject<TrackStreamData>()!;
     }

@@ -6,7 +6,6 @@ using TidalSharp.Exceptions;
 
 namespace TidalSharp;
 
-// TODO: cancellation tokens
 public class API
 {
     internal API(HttpClient client, Session session)
@@ -19,12 +18,12 @@ public class API
     private Session _session;
     private TidalUser? _activeUser;
 
-    public async Task<JObject> GetTrack(string id) => await Call(HttpMethod.Get, $"tracks/{id}");
-    public async Task<TidalLyrics?> GetTrackLyrics(string id)
+    public async Task<JObject> GetTrack(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"tracks/{id}", token: token);
+    public async Task<TidalLyrics?> GetTrackLyrics(string id, CancellationToken token = default)
     {
         try
         {
-            return (await Call(HttpMethod.Get, $"tracks/{id}/lyrics")).ToObject<TidalLyrics>()!;
+            return (await Call(HttpMethod.Get, $"tracks/{id}/lyrics", token: token)).ToObject<TidalLyrics>()!;
         }
         catch (ResourceNotFoundException)
         {
@@ -32,30 +31,32 @@ public class API
         }
     }
 
-    public async Task<JObject> GetAlbum(string id) => await Call(HttpMethod.Get, $"albums/{id}");
-    public async Task<JObject> GetAlbumTracks(string id) => await Call(HttpMethod.Get, $"albums/{id}/tracks");
+    public async Task<JObject> GetAlbum(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"albums/{id}", token: token);
+    public async Task<JObject> GetAlbumTracks(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"albums/{id}/tracks", token: token);
 
-    public async Task<JObject> GetArtist(string id) => await Call(HttpMethod.Get, $"artists/{id}");
-    public async Task<JObject> GetArtistAlbums(string id, FilterOptions filter = FilterOptions.ALL) => await Call(HttpMethod.Get, $"artists/{id}/albums",
+    public async Task<JObject> GetArtist(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"artists/{id}", token: token);
+    public async Task<JObject> GetArtistAlbums(string id, FilterOptions filter = FilterOptions.ALL, CancellationToken token = default) => await Call(HttpMethod.Get, $"artists/{id}/albums",
         urlParameters: new()
         {
             { "filter", filter.ToString() }
-        }
+        },
+        token: token
     );
 
-    public async Task<JObject> GetPlaylist(string id) => await Call(HttpMethod.Get, $"playlists/{id}");
-    public async Task<JObject> GetPlaylistTracks(string id) => await Call(HttpMethod.Get, $"playlists/{id}/tracks");
+    public async Task<JObject> GetPlaylist(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"playlists/{id}", token: token);
+    public async Task<JObject> GetPlaylistTracks(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"playlists/{id}/tracks", token: token);
 
-    public async Task<JObject> GetVideo(string id) => await Call(HttpMethod.Get, $"videos/{id}");
+    public async Task<JObject> GetVideo(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"videos/{id}", token: token);
 
-    public async Task<JObject> GetMix(string id)
+    public async Task<JObject> GetMix(string id, CancellationToken token = default)
     {
         var result = await Call(HttpMethod.Get, "pages/mix",
             urlParameters: new()
             {
                 { "mixId", id },
                 { "deviceType", "BROWSER" }
-            }
+            },
+            token: token
         );
 
         var refactoredObj = new JObject()
@@ -75,7 +76,8 @@ public class API
         Dictionary<string, string>? formParameters = null,
         Dictionary<string, string>? urlParameters = null,
         Dictionary<string, string>? headers = null,
-        string? baseUrl = null
+        string? baseUrl = null,
+        CancellationToken token = default
     )
     {
         headers ??= [];
@@ -114,9 +116,9 @@ public class API
         foreach (var header in headers)
             request.Headers.Add(header.Key, header.Value);
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, token);
 
-        string resp = await response.Content.ReadAsStringAsync();
+        string resp = await response.Content.ReadAsStringAsync(token);
         JObject json = JObject.Parse(resp);
 
         if (!response.IsSuccessStatusCode && !string.IsNullOrEmpty(_activeUser?.RefreshToken))
@@ -124,9 +126,9 @@ public class API
             string? userMessage = json.GetValue("userMessage")?.ToString();
             if (userMessage != null && userMessage.Contains("The token has expired."))
             {
-                bool refreshed = await _session.AttemptTokenRefresh(_activeUser);
+                bool refreshed = await _session.AttemptTokenRefresh(_activeUser, token);
                 if (refreshed)
-                    return await Call(method, path, formParameters, urlParameters, headers, baseUrl);
+                    return await Call(method, path, formParameters, urlParameters, headers, baseUrl, token);
             }
         }
 
@@ -159,7 +161,7 @@ public class API
         return json;
     }
 
-    private string CombineUrl(params string[] urls)
+    private static string CombineUrl(params string[] urls)
     {
         var builder = new StringBuilder();
         foreach (var url in urls)

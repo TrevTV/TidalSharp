@@ -36,15 +36,15 @@ public class TidalClient
     private HttpClient _httpClient;
     private HttpClientHandler _httpClientHandler;
 
-    public async Task<bool> Login(string? redirectUri = null)
+    public async Task<bool> Login(string? redirectUri = null, CancellationToken token = default)
     {
-        var hasToken = await CheckForStoredUser();
+        var hasToken = await CheckForStoredUser(token: token);
         if (hasToken)
             return true;
         if (string.IsNullOrEmpty(redirectUri))
             return false;
 
-        var data = await _session.GetOAuthDataFromRedirect(redirectUri);
+        var data = await _session.GetOAuthDataFromRedirect(redirectUri, token);
         if (data == null) return false;
 
         var user = new TidalUser(data, _userJsonPath, true);
@@ -52,20 +52,20 @@ public class TidalClient
         ActiveUser = user;
         API.UpdateUser(user);
 
-        await user.GetSession(API);
-        await user.WriteToFile();
+        await user.GetSession(API, token);
+        await user.WriteToFile(token);
 
         return false;
     }
 
-    public async Task<bool> IsLoggedIn()
+    public async Task<bool> IsLoggedIn(CancellationToken token = default)
     {
         if (ActiveUser == null || ActiveUser.SessionID == "")
             return false;
 
         try
         {
-            var res = await API.Call(HttpMethod.Get, $"users/{ActiveUser.UserId}/subscription");
+            var res = await API.Call(HttpMethod.Get, $"users/{ActiveUser.UserId}/subscription", token: token);
             return true;
         }
         catch
@@ -76,7 +76,7 @@ public class TidalClient
 
     public string GetPkceLoginUrl() => _session.GetPkceLoginUrl();
 
-    private async Task<bool> CheckForStoredUser(bool doPkce = true)
+    private async Task<bool> CheckForStoredUser(bool doPkce = true, CancellationToken token = default)
     {
         if (_session.AudioQuality != AudioQuality.HI_RES_LOSSLESS)
             doPkce = false;
@@ -87,7 +87,7 @@ public class TidalClient
         {
             try
             {
-                var userData = await File.ReadAllTextAsync(_userJsonPath);
+                var userData = await File.ReadAllTextAsync(_userJsonPath, token);
                 var user = JsonConvert.DeserializeObject<TidalUser>(userData);
                 if (user == null) return false;
 
@@ -96,7 +96,7 @@ public class TidalClient
                 ActiveUser = user;
                 API.UpdateUser(user);
 
-                await user.GetSession(API);
+                await user.GetSession(API, token);
 
                 return true;
             }
