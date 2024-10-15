@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 using TidalSharp.Data;
 using TidalSharp.Exceptions;
@@ -89,8 +90,7 @@ public class API
 
         baseUrl ??= Globals.API_V1_LOCATION;
 
-        // TODO: could probably be implemented without adding another library
-        var apiUrl = Flurl.Url.Combine(baseUrl, path);
+        var apiUrl = CombineUrl(baseUrl, path);
 
         var stringBuilder = new StringBuilder(apiUrl);
         for (int i = 0; i < urlParameters.Count; i++)
@@ -158,5 +158,22 @@ public class API
         }
 
         return json;
+    }
+
+    private string CombineUrl(params string[] urls)
+    {
+        var builder = new StringBuilder();
+        foreach (var url in urls)
+        {
+            builder.Append(url.TrimStart('/').TrimEnd('/'));
+            builder.Append('/');
+        }
+
+        string finalUrl = builder.ToString();
+
+        if (!urls.Last().EndsWith('/'))
+            finalUrl = finalUrl.TrimEnd('/');
+
+        return finalUrl;
     }
 }
