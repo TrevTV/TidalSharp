@@ -103,38 +103,38 @@ public class TidalURL(string url, EntityType type, string id)
         {
             case EntityType.Track:
                 {
-                    var data = await client.API.GetTrack(id);
+                    var data = await client.API.GetTrack(Id);
                     return Globals.GetImageUrl(data["album"]!["cover"]!.ToString(), resolution);
                 }
             case EntityType.Album:
                 {
-                    var data = await client.API.GetAlbum(id);
+                    var data = await client.API.GetAlbum(Id);
                     return Globals.GetImageUrl(data["cover"]!.ToString(), resolution);
                 }
             case EntityType.Artist:
                 {
-                    var data = await client.API.GetArtist(id);
+                    var data = await client.API.GetArtist(Id);
                     var picture = data["picture"];
                     if (picture == null) return null;
                     return Globals.GetImageUrl(picture!.ToString(), resolution);
                 }
             case EntityType.Playlist:
                 {
-                    var data = await client.API.GetPlaylist(id);
+                    var data = await client.API.GetPlaylist(Id);
                     var image = data["squareImage"];
                     if (image == null) return null;
                     return Globals.GetImageUrl(image!.ToString(), resolution);
                 }
             case EntityType.Video:
                 {
-                    var data = await client.API.GetVideo(id);
+                    var data = await client.API.GetVideo(Id);
                     var image = data["imageId"];
                     if (image == null) return null;
                     return Globals.GetImageUrl(image!.ToString(), resolution);
                 }
             case EntityType.Mix:
                 {
-                    var data = await client.API.GetMix(id);
+                    var data = await client.API.GetMix(Id);
                     var images = data["mix"]!["images"]!.Children<JProperty>();
 
                     // jank to get the closest size as mixes don't use the regular hash thing
@@ -163,32 +163,32 @@ public class TidalURL(string url, EntityType type, string id)
         {
             case EntityType.Track:
                 {
-                    var data = await client.API.GetTrack(id);
+                    var data = await client.API.GetTrack(Id);
                     return data["title"]!.ToString();
                 }
             case EntityType.Album:
                 {
-                    var data = await client.API.GetAlbum(id);
+                    var data = await client.API.GetAlbum(Id);
                     return data["title"]!.ToString();
                 }
             case EntityType.Artist:
                 {
-                    var data = await client.API.GetArtist(id);
+                    var data = await client.API.GetArtist(Id);
                     return data["name"]!.ToString();
                 }
             case EntityType.Playlist:
                 {
-                    var data = await client.API.GetPlaylist(id);
+                    var data = await client.API.GetPlaylist(Id);
                     return data["title"]!.ToString();
                 }
             case EntityType.Video:
                 {
-                    var data = await client.API.GetVideo(id);
+                    var data = await client.API.GetVideo(Id);
                     return data["title"]!.ToString();
                 }
             case EntityType.Mix:
                 {
-                    var data = await client.API.GetMix(id);
+                    var data = await client.API.GetMix(Id);
                     return data["mix"]!["title"]!.ToString();
                 }
             default:
