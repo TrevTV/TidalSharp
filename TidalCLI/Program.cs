@@ -3,7 +3,7 @@ using TidalSharp;
 
 string dataDir = Path.Combine(Directory.GetCurrentDirectory(), "TidalSharpData");
 
-var client = new TidalClient(dataDir);
+var client = new TidalClient(TidalSharp.Data.AudioQuality.HI_RES_LOSSLESS, dataDir: dataDir);
 Console.WriteLine($"Current logged in state (should be False): " + await client.IsLoggedIn());
 
 bool hasExistingLogin = await client.Login();

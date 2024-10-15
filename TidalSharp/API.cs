@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Text;
 using TidalSharp.Data;
 using TidalSharp.Exceptions;

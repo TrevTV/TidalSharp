@@ -5,9 +5,9 @@ namespace TidalSharp;
 
 public class TidalClient
 {
-    public TidalClient(string? dataPath = null)
+    public TidalClient(AudioQuality audioQuality = AudioQuality.HIGH, VideoQuality videoQuality = VideoQuality.HIGH, string? dataDir = null)
     {
-        _dataPath = dataPath;
+        _dataPath = dataDir;
         _userJsonPath = _dataPath == null ? null : Path.Combine(_dataPath, "lastUser.json");
 
         if (_dataPath != null && !Directory.Exists(_dataPath))
@@ -18,8 +18,7 @@ public class TidalClient
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Safari/537.36");
         _httpClient.DefaultRequestHeaders.Add("X-Tidal-Token", Globals.CLIENT_ID);
 
-        // TODO: lazy defaults
-        _session = new(_httpClient, AudioQuality.HIGH, VideoQuality.HIGH);
+        _session = new(_httpClient, audioQuality, videoQuality);
         API = new(_httpClient, _session);
         Downloader = new(_httpClient, API, _session);
     }

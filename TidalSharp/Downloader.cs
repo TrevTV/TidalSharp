@@ -147,6 +147,8 @@ public class Downloader
         track.Save();
     }
 
+    // TODO: implement method to extract flacs from the m4a containers
+    // tidal-dl-ng uses ffmpeg but thats not ideal in this case
     private async Task<(MemoryStream stream, StreamManifest manifest)> GetTrackStream(string trackId)
     {
         var trackStreamData = await GetTrackStreamData(trackId);
