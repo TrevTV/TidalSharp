@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using TidalSharp.Data;
 
@@ -20,6 +19,17 @@ public class API
     private TidalUser? _activeUser;
 
     public async Task<JObject> GetTrack(string id) => await Call(HttpMethod.Get, $"tracks/{id}");
+    public async Task<TidalLyrics?> GetTrackLyrics(string id)
+    {
+        try
+        {
+            return (await Call(HttpMethod.Get, $"tracks/{id}/lyrics")).ToObject<TidalLyrics>()!;
+        }
+        catch (Exception) // specifiy custom exception
+        {
+            return null;
+        }
+    }
 
     public async Task<JObject> GetAlbum(string id) => await Call(HttpMethod.Get, $"albums/{id}");
     public async Task<JObject> GetAlbumTracks(string id) => await Call(HttpMethod.Get, $"albums/{id}/tracks");
@@ -118,6 +128,19 @@ public class API
                 if (refreshed)
                     return await Call(method, path, formParameters, urlParameters, headers, baseUrl);
             }
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            JToken? errors = json["errors"];
+            if (errors != null && errors.Any())
+                throw new Exception(errors[0]!["detail"]!.ToString());
+
+            JToken? userMessage = json["userMessage"];
+            if (userMessage != null)
+                throw new Exception(userMessage.ToString());
+
+            throw new Exception(json.ToString());
         }
 
         if (!response.IsSuccessStatusCode)

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using TidalSharp.Data;
 using TidalSharp.Downloading;
 
@@ -60,6 +61,30 @@ public class Downloader
         }
 
         return await response.Content.ReadAsByteArrayAsync(token);
+    }
+
+    public async Task<(string? plainLyrics, string? syncLyrics)?> FetchLyricsFromTidal(string trackId)
+    {
+        var lyrics = await _api.GetTrackLyrics(trackId);
+        if (lyrics == null)
+            return null;
+
+        return (lyrics.Lyrics, lyrics.Subtitles);
+    }
+
+    public async Task<(string? plainLyrics, string? syncLyrics)?> FetchLyricsFromLRCLIB(string instance, string trackName, string artistName, string albumName, int duration, CancellationToken token = default)
+    {
+        var requestUrl = $"https://{instance}/api/get?artist_name={Uri.EscapeDataString(artistName)}&track_name={Uri.EscapeDataString(trackName)}&album_name={Uri.EscapeDataString(albumName)}&duration={duration}";
+        var response = await _client.GetAsync(requestUrl, token);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync(token);
+            var json = JObject.Parse(content);
+            return (json["plainLyrics"]?.ToString(), json["syncedLyrics"]?.ToString());
+        }
+
+        return null;
     }
 
     private async Task<(MemoryStream stream, StreamManifest manifest)> GetTrackStream(string trackId)
