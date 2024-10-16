@@ -25,7 +25,7 @@ public class TidalClient
 
     public API API { get; init; }
     public Downloader Downloader { get; init; }
-    private TidalUser? ActiveUser { get; set; }
+    public TidalUser? ActiveUser { get; set; }
 
     private Session _session;
     private bool _isPkce;
