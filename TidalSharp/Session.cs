@@ -10,12 +10,9 @@ namespace TidalSharp;
 internal class Session
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value; RegenerateCodes sets them, no idea why it's complaining
-    internal Session(HttpClient client, AudioQuality audioQuality, VideoQuality videoQuality, int itemLimit = 1000, bool alac = true)
+    internal Session(HttpClient client, int itemLimit = 1000, bool alac = true)
 #pragma warning restore CS8618
     {
-        AudioQuality = audioQuality;
-        VideoQuality = videoQuality;
-
         _httpClient = client;
         Alac = alac;
 
@@ -24,8 +21,6 @@ internal class Session
         RegenerateCodes();
     }
 
-    public AudioQuality AudioQuality { get; init; }
-    public VideoQuality VideoQuality { get; init; }
     public int ItemLimit { get; init; }
     public bool Alac { get; init; }
 

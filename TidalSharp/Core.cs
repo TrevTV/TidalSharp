@@ -5,7 +5,7 @@ namespace TidalSharp;
 
 public class TidalClient
 {
-    public TidalClient(AudioQuality audioQuality = AudioQuality.HIGH, VideoQuality videoQuality = VideoQuality.HIGH, string? dataDir = null)
+    public TidalClient(string? dataDir = null)
     {
         _dataPath = dataDir;
         _userJsonPath = _dataPath == null ? null : Path.Combine(_dataPath, "lastUser.json");
@@ -18,7 +18,7 @@ public class TidalClient
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 12; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Safari/537.36");
         _httpClient.DefaultRequestHeaders.Add("X-Tidal-Token", Globals.CLIENT_ID);
 
-        _session = new(_httpClient, audioQuality, videoQuality);
+        _session = new(_httpClient);
         API = new(_httpClient, _session);
         Downloader = new(_httpClient, API, _session);
     }
@@ -78,9 +78,6 @@ public class TidalClient
 
     private async Task<bool> CheckForStoredUser(bool doPkce = true, CancellationToken token = default)
     {
-        if (_session.AudioQuality != AudioQuality.HI_RES_LOSSLESS)
-            doPkce = false;
-
         _isPkce = doPkce;
 
         if (_userJsonPath != null && File.Exists(_userJsonPath))
