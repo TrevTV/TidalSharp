@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Diagnostics;
 using TidalSharp.Data;
 using TidalSharp.Downloading;
@@ -21,15 +22,15 @@ public class Downloader
     private readonly API _api;
     private readonly Session _session;
 
-    public async Task<DownloadData<Stream>> GetRawTrackStream(string trackId, AudioQuality quality, CancellationToken token = default)
+    public async Task<DownloadData<Stream>> GetRawTrackStream(string trackId, AudioQuality quality, Action<int>? onChunkDownloaded = null, CancellationToken token = default)
     {
-        var (stream, manifest) = await GetTrackStream(trackId, quality, token);
+        var (stream, manifest) = await GetTrackStream(trackId, quality, onChunkDownloaded, token);
         return new(stream, manifest.FileExtension);
     }
 
-    public async Task<DownloadData<byte[]>> GetRawTrackBytes(string trackId, AudioQuality quality, CancellationToken token = default)
+    public async Task<DownloadData<byte[]>> GetRawTrackBytes(string trackId, AudioQuality quality, Action<int>? onChunkDownloaded = null, CancellationToken token = default)
     {
-        var (stream, manifest) = await GetTrackStream(trackId, quality, token);
+        var (stream, manifest) = await GetTrackStream(trackId, quality, onChunkDownloaded, token);
         var data = new DownloadData<byte[]>(stream.ToArray(), manifest.FileExtension);
 
         await stream.DisposeAsync();
@@ -37,9 +38,9 @@ public class Downloader
         return data;
     }
 
-    public async Task WriteRawTrackToFile(string trackId, AudioQuality quality, string trackPath, CancellationToken token = default)
+    public async Task WriteRawTrackToFile(string trackId, AudioQuality quality, string trackPath, Action<int>? onChunkDownloaded = null, CancellationToken token = default)
     {
-        var (stream, manifest) = await GetTrackStream(trackId, quality, token);
+        var (stream, manifest) = await GetTrackStream(trackId, quality, onChunkDownloaded, token);
         using FileStream fileStream = File.Open(trackPath, FileMode.Create);
 
         await stream.CopyToAsync(fileStream, token);
@@ -51,6 +52,13 @@ public class Downloader
         var trackStreamData = await GetTrackStreamData(trackId, quality, token);
         var streamManifest = new StreamManifest(trackStreamData);
         return streamManifest.FileExtension;
+    }
+
+    public async Task<int> GetChunksInTrack(string trackId, AudioQuality quality, CancellationToken token = default)
+    {
+        var trackStreamData = await GetTrackStreamData(trackId, quality, token);
+        var streamManifest = new StreamManifest(trackStreamData);
+        return streamManifest.Urls.Length;
     }
 
     public async Task<byte[]> GetImageBytes(string id, MediaResolution resolution, CancellationToken token = default)
@@ -149,7 +157,7 @@ public class Downloader
 
     // TODO: implement method to extract flacs from the m4a containers
     // tidal-dl-ng uses ffmpeg but thats not ideal in this case
-    private async Task<(MemoryStream stream, StreamManifest manifest)> GetTrackStream(string trackId, AudioQuality quality, CancellationToken token = default)
+    private async Task<(MemoryStream stream, StreamManifest manifest)> GetTrackStream(string trackId, AudioQuality quality, Action<int>? onChunkDownloaded = null, CancellationToken token = default)
     {
         var trackStreamData = await GetTrackStreamData(trackId, quality, token);
         var streamManifest = new StreamManifest(trackStreamData);
@@ -158,13 +166,15 @@ public class Downloader
 
         var outStream = new MemoryStream();
 
-        foreach (var url in urls)
+        for (int i = 0; i < urls.Length; i++)
         {
+            var url = urls[i];
             var message = new HttpRequestMessage(HttpMethod.Get, url);
             var response = await _client.SendAsync(message, token);
             var stream = await response.Content.ReadAsStreamAsync(token);
 
             stream.CopyTo(outStream);
+            onChunkDownloaded?.Invoke(i+1);
         }
 
         // TODO: test decryption, don't know of any tracks yet that need it
