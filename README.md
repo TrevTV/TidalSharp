@@ -66,4 +66,4 @@ foreach (var track in tracksInAlbum)
 ```
 
 ## Credits
-- This project is heavily based on [tidal-dl-ng](https://github.com/exislow/tidal-dl-ng) and [tidalapi](https://github.com/tamland/python-tidal), under the [AGPL-3.0 License](https://github.com/exislow/tidal-dl-ng/blob/master/LICENSE) and [AGPL-3.0 License](https://github.com/exislow/tidal-dl-ng/blob/master/LICENSE), respectively.
+- This project is heavily based on [tidal-dl-ng](https://github.com/exislow/tidal-dl-ng) and [tidalapi](https://github.com/tamland/python-tidal), under the [AGPL-3.0 License](https://github.com/exislow/tidal-dl-ng/blob/master/LICENSE) and [LGPL-3.0 License](https://github.com/tamland/python-tidal/blob/master/LICENSE), respectively.
