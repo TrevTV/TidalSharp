@@ -3,7 +3,7 @@ using TidalSharp;
 
 string dataDir = Path.Combine(Directory.GetCurrentDirectory(), "TidalSharpData");
 
-var client = new TidalClient(TidalSharp.Data.AudioQuality.HI_RES_LOSSLESS, dataDir: dataDir);
+var client = new TidalClient(dataDir: dataDir);
 Console.WriteLine($"Current logged in state (should be False): " + await client.IsLoggedIn());
 
 bool hasExistingLogin = await client.Login();
@@ -39,27 +39,28 @@ tidalUrl.Dump();
 Console.WriteLine("-----------------------");
 
 Console.WriteLine("Downloading with bytes...");
-using var downloadData = await client.Downloader.GetRawTrackBytes("389909667");
+using var downloadData = await client.Downloader.GetRawTrackBytes("389909667", TidalSharp.Data.AudioQuality.LOW);
 Console.WriteLine("Download complete, applying metadata");
 await client.Downloader.ApplyMetadataToTrackBytes("389909667", downloadData);
-File.WriteAllBytes(Path.Combine(dataDir, "test_byte" + downloadData.FileExtension), downloadData.Data);
+File.WriteAllBytes(Path.Combine(dataDir, "test_byte_low" + downloadData.FileExtension), downloadData.Data);
 Console.WriteLine("Done");
 
 Console.WriteLine("-----------------------");
 
 Console.WriteLine("Downloading with stream...");
-using var downloadData2 = await client.Downloader.GetRawTrackStream("256946543");
+using var downloadData2 = await client.Downloader.GetRawTrackStream("256946543", TidalSharp.Data.AudioQuality.LOSSLESS);
 Console.WriteLine("Download complete, applying metadata");
 await client.Downloader.ApplyMetadataToTrackStream("256946543", downloadData2);
-using FileStream fileStream = File.Open(Path.Combine(dataDir, "test_stream" + downloadData2.FileExtension), FileMode.Create);
+using FileStream fileStream = File.Open(Path.Combine(dataDir, "test_stream_lossless" + downloadData2.FileExtension), FileMode.Create);
 downloadData2.Data.CopyTo(fileStream);
 Console.WriteLine("Done");
 
 Console.WriteLine("-----------------------");
 
 Console.WriteLine("Downloading with file...");
-var ext = await client.Downloader.GetExtensionForTrack("256946552");
-await client.Downloader.WriteRawTrackToFile("256946552", Path.Combine(dataDir, "test_file" + ext));
+var ext = await client.Downloader.GetExtensionForTrack("256946552", TidalSharp.Data.AudioQuality.HI_RES);
+string path = Path.Combine(dataDir, "test_file_hi_res" + ext);
+await client.Downloader.WriteRawTrackToFile("256946552", TidalSharp.Data.AudioQuality.HI_RES, path);
 Console.WriteLine("Download complete, applying metadata");
-await client.Downloader.ApplyMetadataToFile("256946552", Path.Combine(dataDir, "test_file" + ext));
+await client.Downloader.ApplyMetadataToFile("256946552", path);
 Console.WriteLine("Done");
