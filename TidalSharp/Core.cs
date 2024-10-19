@@ -55,7 +55,7 @@ public class TidalClient
         await user.GetSession(API, token);
         await user.WriteToFile(token);
 
-        return false;
+        return true;
     }
 
     public async Task<bool> IsLoggedIn(CancellationToken token = default)
