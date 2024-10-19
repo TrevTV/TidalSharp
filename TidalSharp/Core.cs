@@ -76,6 +76,8 @@ public class TidalClient
 
     public string GetPkceLoginUrl() => _session.GetPkceLoginUrl();
 
+    public void RegeneratePkceCodes() => _session.RegenerateCodes();
+
     private async Task<bool> CheckForStoredUser(bool doPkce = true, CancellationToken token = default)
     {
         _isPkce = doPkce;

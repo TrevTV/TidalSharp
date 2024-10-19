@@ -107,8 +107,6 @@ internal class Session
         var content = new FormUrlEncodedContent(data);
         var response = await _httpClient.PostAsync(Globals.API_OAUTH2_TOKEN, content, token);
 
-        RegenerateCodes();
-
         if (!response.IsSuccessStatusCode)
             throw new APIException($"Login failed: {await response.Content.ReadAsStringAsync(token)}");
 
@@ -122,7 +120,7 @@ internal class Session
         }
     }
 
-    private void RegenerateCodes()
+    public void RegenerateCodes()
     {
         _clientUniqueKey = $"{BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0):x}";
         _codeVerifier = ToBase64UrlEncoded(RandomNumberGenerator.GetBytes(32));
