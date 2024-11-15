@@ -146,7 +146,7 @@ public class Downloader
         track.Tag.Performers = trackData["artists"]!.Select(a => a["name"]!.ToString()).ToArray();
         track.Tag.AlbumArtists = albumPage["artists"]!.Select(a => a["name"]!.ToString()).ToArray();
         string? rawReleaseDate = albumPage["releaseDate"]?.ToString() ?? albumPage["streamStartDate"]?.ToString();
-        DateTime releaseDate = rawReleaseDate != null ? DateTime.Parse(rawReleaseDate, CultureInfo.InvariantCulture) : DateTime.MinValue;
+        DateTime releaseDate = !string.IsNullOrEmpty(rawReleaseDate) ? DateTime.Parse(rawReleaseDate, CultureInfo.InvariantCulture) : DateTime.MinValue;
         track.Tag.Year = (uint)releaseDate.Year;
         track.Tag.Track = uint.Parse(trackData["trackNumber"]!.ToString());
         track.Tag.TrackCount = uint.Parse(albumPage["numberOfTracks"]!.ToString());
