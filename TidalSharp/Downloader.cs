@@ -198,6 +198,9 @@ public class Downloader
 
     private async Task<TrackStreamData> GetTrackStreamData(string trackId, AudioQuality quality, CancellationToken token = default)
     {
+        if (_cachedStreamData.TryGetValue((trackId, quality), out TrackStreamData? data))
+            return data;
+
         var result = await _api.Call(HttpMethod.Get, $"tracks/{trackId}/playbackinfopostpaywall",
             urlParameters: new()
             {
@@ -207,8 +210,12 @@ public class Downloader
             },
             token: token
         );
-        return result.ToObject<TrackStreamData>()!;
+        var streamData = result.ToObject<TrackStreamData>()!;
+        _cachedStreamData.Add((trackId, quality), streamData);
+        return streamData;
     }
+
+    private Dictionary<(string trackId, AudioQuality quality), TrackStreamData> _cachedStreamData = [];
 }
 
 public class DownloadData<T>(T data, string fileExtension) : IDisposable
