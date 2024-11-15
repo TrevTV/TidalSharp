@@ -211,7 +211,8 @@ public class Downloader
             token: token
         );
         var streamData = result.ToObject<TrackStreamData>()!;
-        _cachedStreamData.Add((trackId, quality), streamData);
+        lock (_cachedStreamData)
+            _cachedStreamData.Add((trackId, quality), streamData);
         return streamData;
     }
 
