@@ -5,7 +5,6 @@ public enum AudioQuality
     LOW, // 96k
     HIGH, // 320k
     LOSSLESS,
-    HI_RES,
     HI_RES_LOSSLESS
 }
 
