@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using TidalSharp.Data;
 using TidalSharp.Downloading;
 using TidalSharp.Exceptions;
@@ -144,7 +145,8 @@ public class Downloader
         track.Tag.Album = trackData["album"]!["title"]!.ToString();
         track.Tag.Performers = trackData["artists"]!.Select(a => a["name"]!.ToString()).ToArray();
         track.Tag.AlbumArtists = albumPage["artists"]!.Select(a => a["name"]!.ToString()).ToArray();
-        DateTime releaseDate = DateTime.Parse(trackData["streamStartDate"]!.ToString());
+        string? rawReleaseDate = albumPage["releaseDate"]?.ToString() ?? albumPage["streamStartDate"]?.ToString();
+        DateTime releaseDate = rawReleaseDate != null ? DateTime.Parse(rawReleaseDate, CultureInfo.InvariantCulture) : DateTime.MinValue;
         track.Tag.Year = (uint)releaseDate.Year;
         track.Tag.Track = uint.Parse(trackData["trackNumber"]!.ToString());
         track.Tag.TrackCount = uint.Parse(albumPage["numberOfTracks"]!.ToString());
