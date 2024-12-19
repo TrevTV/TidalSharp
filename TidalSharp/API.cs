@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using TidalSharp.Data;
@@ -17,6 +18,10 @@ public class API
     private HttpClient _httpClient;
     private Session _session;
     private TidalUser? _activeUser;
+
+    private readonly ConcurrentQueue<DateTime> _requestTimestamps = [];
+    private readonly TimeSpan _rateLimitTimeWindow = TimeSpan.FromSeconds(1);
+    internal int _rateLimitMaxRequestsPerSecond = 5;
 
     public async Task<JObject> GetTrack(string id, CancellationToken token = default) => await Call(HttpMethod.Get, $"tracks/{id}", token: token);
     public async Task<TidalLyrics?> GetTrackLyrics(string id, CancellationToken token = default)
@@ -80,6 +85,8 @@ public class API
         CancellationToken token = default
     )
     {
+        await EnforceRateLimit();
+
         headers ??= [];
         urlParameters ??= [];
         urlParameters["sessionId"] = _activeUser?.SessionID ?? "";
@@ -159,6 +166,41 @@ public class API
         }
 
         return json;
+    }
+
+    private async Task EnforceRateLimit()
+    {
+        if (_rateLimitMaxRequestsPerSecond <= 0)
+            return;
+
+        if (!_requestTimestamps.TryPeek(out var timePeek))
+        {
+            _requestTimestamps.Enqueue(DateTime.UtcNow);
+            return;
+        }
+
+        Console.WriteLine(timePeek);
+
+        // remove old time stamps
+        while (_requestTimestamps.Any() && timePeek < DateTime.UtcNow - _rateLimitTimeWindow)
+            _requestTimestamps.TryDequeue(out _);
+
+        // determine if we should be waiting or not
+        if (_requestTimestamps.Count >= _rateLimitMaxRequestsPerSecond)
+        {
+            if (!_requestTimestamps.TryPeek(out timePeek))
+                return;
+
+            var nextAvailableTime = timePeek.AddSeconds(1);
+            var delayTime = nextAvailableTime - DateTime.UtcNow;
+            if (delayTime > TimeSpan.Zero)
+            {
+                Console.WriteLine("getting rate limited " + (delayTime.TotalSeconds));
+                await Task.Delay(delayTime);
+            }
+        }
+
+        _requestTimestamps.Enqueue(DateTime.UtcNow);
     }
 
     private static string CombineUrl(params string[] urls)

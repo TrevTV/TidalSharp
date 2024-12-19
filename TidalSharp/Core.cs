@@ -74,6 +74,11 @@ public class TidalClient
         }
     }
 
+    public void SetRateLimit(int requestsPerSecond)
+    {
+        API._rateLimitMaxRequestsPerSecond = requestsPerSecond;
+    }
+
     public string GetPkceLoginUrl() => _session.GetPkceLoginUrl();
 
     public void RegeneratePkceCodes() => _session.RegenerateCodes();
