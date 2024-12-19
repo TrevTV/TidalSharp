@@ -179,8 +179,6 @@ public class API
             return;
         }
 
-        Console.WriteLine(timePeek);
-
         // remove old time stamps
         while (_requestTimestamps.Any() && timePeek < DateTime.UtcNow - _rateLimitTimeWindow)
             _requestTimestamps.TryDequeue(out _);
@@ -194,10 +192,7 @@ public class API
             var nextAvailableTime = timePeek.AddSeconds(1);
             var delayTime = nextAvailableTime - DateTime.UtcNow;
             if (delayTime > TimeSpan.Zero)
-            {
-                Console.WriteLine("getting rate limited " + (delayTime.TotalSeconds));
                 await Task.Delay(delayTime);
-            }
         }
 
         _requestTimestamps.Enqueue(DateTime.UtcNow);
