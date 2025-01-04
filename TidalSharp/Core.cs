@@ -31,15 +31,20 @@ public class TidalClient
 
     private string? _dataPath;
     private string? _userJsonPath;
+    private string? _lastRedirectUri;
 
     private HttpClient _httpClient;
     private HttpClientHandler _httpClientHandler;
 
     public async Task<bool> Login(string? redirectUri = null, CancellationToken token = default)
     {
-        var hasToken = await CheckForStoredUser(token);
-        if (hasToken)
+        var shouldCheckFile = _lastRedirectUri == null || _lastRedirectUri == redirectUri; // prevents us from loading the old user when the redirect uri is updated
+        if (shouldCheckFile && await CheckForStoredUser(token))
+        {
+            _lastRedirectUri = redirectUri;
             return true;
+        }
+
         if (string.IsNullOrEmpty(redirectUri))
             return false;
 
@@ -54,12 +59,14 @@ public class TidalClient
         await user.GetSession(API, token);
         await user.WriteToFile(token);
 
+        _lastRedirectUri = redirectUri;
+
         return true;
     }
 
     public async Task<bool> IsLoggedIn(CancellationToken token = default)
     {
-        if (ActiveUser == null || ActiveUser.SessionID == "")
+        if (ActiveUser == null || string.IsNullOrEmpty(ActiveUser.SessionID))
             return false;
 
         try
