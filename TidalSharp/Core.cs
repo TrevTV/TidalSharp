@@ -28,7 +28,6 @@ public class TidalClient
     public TidalUser? ActiveUser { get; set; }
 
     private Session _session;
-    private bool _isPkce;
 
     private string? _dataPath;
     private string? _userJsonPath;
@@ -38,7 +37,7 @@ public class TidalClient
 
     public async Task<bool> Login(string? redirectUri = null, CancellationToken token = default)
     {
-        var hasToken = await CheckForStoredUser(token: token);
+        var hasToken = await CheckForStoredUser(token);
         if (hasToken)
             return true;
         if (string.IsNullOrEmpty(redirectUri))
@@ -83,10 +82,8 @@ public class TidalClient
 
     public void RegeneratePkceCodes() => _session.RegenerateCodes();
 
-    private async Task<bool> CheckForStoredUser(bool doPkce = true, CancellationToken token = default)
+    private async Task<bool> CheckForStoredUser(CancellationToken token = default)
     {
-        _isPkce = doPkce;
-
         if (_userJsonPath != null && File.Exists(_userJsonPath))
         {
             try
