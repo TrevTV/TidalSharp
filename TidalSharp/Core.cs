@@ -51,7 +51,7 @@ public class TidalClient
         var data = await _session.GetOAuthDataFromRedirect(redirectUri, token);
         if (data == null) return false;
 
-        var user = new TidalUser(data, _userJsonPath, true);
+        var user = new TidalUser(data, _userJsonPath, true, DateTime.UtcNow.AddSeconds(data.ExpiresIn));
 
         ActiveUser = user;
         API.UpdateUser(user);
@@ -62,6 +62,13 @@ public class TidalClient
         _lastRedirectUri = redirectUri;
 
         return true;
+    }
+
+    public async Task ForceRefreshToken(CancellationToken token = default)
+    {
+        if (ActiveUser == null)
+            return;
+        await _session.AttemptTokenRefresh(ActiveUser, token);
     }
 
     public async Task<bool> IsLoggedIn(CancellationToken token = default)

@@ -9,14 +9,12 @@ namespace TidalSharp;
 public class TidalUser
 {
     [JsonConstructor]
-    internal TidalUser(OAuthTokenData data, string? jsonPath, bool isPkce)
+    internal TidalUser(OAuthTokenData data, string? jsonPath, bool isPkce, DateTime? expirationDate)
     {
         _data = data;
         _jsonPath = jsonPath;
+        ExpirationDate = expirationDate ?? DateTime.MinValue;
         IsPkce = isPkce;
-        
-        DateTime now = DateTime.UtcNow;
-        ExpirationDate = now.AddSeconds(data.ExpiresIn);
     }
 
     internal async Task GetSession(API api, CancellationToken token = default)
@@ -61,13 +59,15 @@ public class TidalUser
     private OAuthTokenData _data;
     private SessionInfo? _sessionInfo;
 
+    [JsonProperty("ExpirationDate")]
+    public DateTime ExpirationDate { get; private set; } = DateTime.MinValue;
+
     [JsonProperty("IsPkce")]
     public bool IsPkce { get; init; }
 
     public string AccessToken => _data.AccessToken;
     public string RefreshToken => _data.RefreshToken;
     public string TokenType => _data.TokenType;
-    public DateTime ExpirationDate { get; private set; }
 
     public long UserId => _data.UserId;
     public string CountryCode => _sessionInfo?.CountryCode ?? "";
